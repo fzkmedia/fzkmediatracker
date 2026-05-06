@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>FZK Media — Cycle Tracker</title>
+<title>FZK Media - Cycle Tracker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js" crossorigin="anonymous"></script>
@@ -11,27 +11,31 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{overflow-x:hidden;max-width:100vw;font-family:'Inter','Segoe UI',sans-serif;}
-body{background:linear-gradient(150deg,#fff5f5 0%,#fafafa 50%,#f5f0ff 100%);min-height:100vh;}
+body{background:#F7F7F8;min-height:100vh;}
 input,select,textarea,button{font-family:inherit;}
-input:focus,select:focus,textarea:focus{outline:none;border-color:#E8201A!important;box-shadow:0 0 0 3px rgba(232,32,26,0.1);}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#E8201A!important;box-shadow:0 0 0 3px rgba(232,32,26,0.08);}
 select option{background:#fff;}
 ::-webkit-scrollbar{width:4px;}
-::-webkit-scrollbar-thumb{background:#ddd;border-radius:4px;}
+::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:4px;}
 @keyframes spin{to{transform:rotate(360deg);}}
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes confetti{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(-80px) rotate(720deg);opacity:0}}
+@keyframes popIn{0%{transform:scale(0.8);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
 .fade-up{animation:fadeUp 0.2s ease;}
+.pop-in{animation:popIn 0.3s ease;}
 
 /* ── Mobile ── */
 @media(max-width:640px){
-  .nav{flex-direction:column!important;height:auto!important;padding:12px 14px!important;gap:8px!important;align-items:flex-start!important;}
-  .nav-r{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;width:100%!important;}
-  .nav-r button{font-size:11px!important;padding:7px 4px!important;}
-  .stats{grid-template-columns:repeat(3,1fr)!important;}
-  .vrow{flex-direction:column!important;gap:8px!important;}
+  .nav{flex-direction:column!important;height:auto!important;padding:10px 14px!important;gap:8px!important;align-items:flex-start!important;}
+  .nav-r{display:grid!important;grid-template-columns:1fr 1fr!important;gap:5px!important;width:100%!important;}
+  .nav-r button{font-size:11px!important;padding:6px 4px!important;}
+  .stats{grid-template-columns:repeat(3,1fr)!important;gap:8px!important;}
+  .view-row{flex-direction:column!important;gap:8px!important;align-items:flex-start!important;}
   .vsearch{width:100%!important;}
+  .filter-pills{flex-wrap:wrap!important;}
   .legend{display:none!important;}
-  .chdr{padding:11px 12px!important;gap:8px!important;}
+  .chdr{padding:12px!important;gap:8px!important;}
   .cavatar{width:30px!important;height:30px!important;font-size:11px!important;border-radius:8px!important;}
   .cprog{width:52px!important;}
   .cexp{padding:0 10px 14px!important;}
@@ -39,43 +43,46 @@ select option{background:#fff;}
   .cedit>div{flex:1 1 120px!important;}
   .cedit input,.cedit select,.cedit textarea{width:100%!important;}
   .stageDates{display:none!important;}
-  .cal-grid{grid-template-columns:repeat(4,1fr)!important;}
-  .cal-grid>div:nth-child(n+5){display:none!important;}
+  .cal-grid{grid-template-columns:repeat(7,1fr)!important;gap:4px!important;}
+  .cal-day{padding:6px 4px!important;min-height:70px!important;font-size:8px!important;}
+  .cal-daynum{font-size:13px!important;}
+  .cal-event{font-size:8px!important;padding:2px 3px!important;}
   .ai-panel{width:100vw!important;left:0!important;right:0!important;}
   .postplan{padding-left:0!important;}
   .main{padding:14px 10px!important;}
+  .view-toggle{align-self:stretch!important;}
+  .view-toggle button{flex:1!important;text-align:center!important;}
 }
 </style>
 </head>
 <body>
 <div id="root">
   <div style="min-height:100vh;background:#E8201A;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:Inter,sans-serif;">
-    <div style="font-size:32px;font-weight:900;color:white;letter-spacing:-1px;">FZK Media</div>
-    <div style="width:28px;height:28px;border:3px solid white;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-    <div style="font-size:13px;color:rgba(255,255,255,0.7);">Loading tracker...</div>
+    <div style="font-size:28px;font-weight:900;color:white;letter-spacing:-0.5px;">FZK Media</div>
+    <div style="width:24px;height:24px;border:3px solid white;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
     <style>@keyframes spin{to{transform:rotate(360deg);}}</style>
   </div>
 </div>
 <script type="text/babel" data-presets="react">
 const {useState,useEffect,useCallback,useMemo,useRef} = React;
 
-// ── CONFIG ───────────────────────────────────────────────────────────
+// ── CONFIG ─────────────────────────────────────────────────────────
 const SB_URL  = "https://lnodjrxpnisldmgpfeme.supabase.co";
 const SB_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxub2RqcnhwbmlzbGRtZ3BmZW1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzQyOTEsImV4cCI6MjA5MzQxMDI5MX0.Z1bpBnmd-k5IgWli7fSm4jKXRF5EhGrR2MFC_nDsJFY";
 const PW      = "vibing@fzkMEdia26";
-const AUTH_V  = "fzk_v5"; // bump to force re-login
+const AUTH_V  = "fzk_v6";
 const EMAILS  = "fiza@fzkmedia.com,ashish@fzkmedia.com,amit@fzkmedia.com,sayali@fzkmedia.com,vidhi.intern@fzkmedia.com,nikita@fzkmedia.com,hello@fzkmedia.com";
 const getKey  = () => localStorage.getItem("fzk_ak") || "";
 
-// ── BRAND ─────────────────────────────────────────────────────────────
-const R = "#E8201A", RD = "#C01815", RL = "#FFF0F0", RM = "#FECACA";
-const BK = "#111", G7 = "#374151", G5 = "#6B7280", G3 = "#D1D5DB", G1 = "#F3F4F6", G0 = "#F9FAFB", W = "#FFFFFF";
-const GR = "#16A34A", GB = "#DCFCE7", OR = "#EA580C", OB = "#FFEDD5";
-const BL = "#2563EB", BB = "#DBEAFE", PU = "#7C3AED", PB = "#EDE9FE";
+// ── BRAND ──────────────────────────────────────────────────────────
+const R="#E8201A", RD="#C01815", RL="#FFF0F0", RM="#FECACA";
+const BK="#111", G9="#1a1a1a", G7="#374151", G5="#6B7280", G4="#9CA3AF", G3="#D1D5DB", G2="#E5E7EB", G1="#F3F4F6", G0="#F9FAFB", W="#FFFFFF";
+const GR="#16A34A", GB="#DCFCE7", OR="#EA580C", OB="#FFEDD5";
+const BL="#2563EB", BB="#DBEAFE", PU="#7C3AED", PB="#EDE9FE";
 
-// ── STAGE TEMPLATES ───────────────────────────────────────────────────
+// ── STAGES ─────────────────────────────────────────────────────────
 const OB_STAGES = [
-  {key:"questionnaire",   label:"Notion Questionnaire", d:0,  dur:3,  color:PU},
+  {key:"questionnaire",   label:"Notion Questionnaire", d:0,  dur:3,  color:"#7C3AED"},
   {key:"hygieneCheck",    label:"Hygiene Check",         d:3,  dur:2,  color:"#0891B2"},
   {key:"contentStrategy", label:"Content Strategy",      d:5,  dur:3,  color:OR},
   {key:"onboardingCall",  label:"Onboarding Call",       d:8,  dur:2,  color:R},
@@ -96,24 +103,32 @@ const CY_STAGES = [
 ];
 
 const DEF_GROUPS = ["Onboarding","Active","Getting Started","OG Client","To Start"];
+const GROUP_ICONS = {"Onboarding":"🌱","Active":"⚡","Getting Started":"🚀","OG Client":"⭐","To Start":"📋"};
 
-const GROUP_ICONS = {Onboarding:"🌱",Active:"⚡","Getting Started":"🚀","OG Client":"⭐","To Start":"📋"};
-
-// ── HELPERS ───────────────────────────────────────────────────────────
+// ── HELPERS ────────────────────────────────────────────────────────
 const toStr   = d => new Date(d).toISOString().split("T")[0];
 const addDays = (d,n) => { const r=new Date(d); r.setDate(r.getDate()+n); return r; };
-const fmtD     = d => new Date(d).toLocaleDateString("en-GB",{day:"2-digit",month:"short"});
-const fmtDateFull = d => new Date(d).toLocaleDateString("en-GB",{weekday:"short",day:"2-digit",month:"short"});
-const fmtDFull= d => new Date(d).toLocaleDateString("en-GB",{weekday:"short",day:"2-digit",month:"short"});
+const fmtD    = d => new Date(d).toLocaleDateString("en-GB",{day:"2-digit",month:"short"});
+const fmtFull = d => new Date(d).toLocaleDateString("en-GB",{weekday:"short",day:"2-digit",month:"short"});
 const daysBetween = (a,b) => Math.floor((new Date(b)-new Date(a))/86400000);
 const elapsed = s => daysBetween(s, new Date());
 const todayStr= () => toStr(new Date());
+// Strip markdown from AI responses
+function cleanAI(text){
+  return text
+    .replace(/\*\*(.+?)\*\*/g,"$1")
+    .replace(/\*(.+?)\*/g,"$1")
+    .replace(/#+\s/g,"")
+    .replace(/-/g,"-")
+    .replace(/\u2014/g,"-")
+    .replace(/\u2013/g,"-");
+}
 
 function getStatus(start,dur,done){
   if(done) return "done";
-  const t=new Date(); t.setHours(0,0,0,0);
-  const s=new Date(start); s.setHours(0,0,0,0);
-  const e=addDays(s,dur); e.setHours(0,0,0,0);
+  const t=new Date();t.setHours(0,0,0,0);
+  const s=new Date(start);s.setHours(0,0,0,0);
+  const e=addDays(s,dur);e.setHours(0,0,0,0);
   if(t<s) return "upcoming";
   if(t>=s&&t<e) return "active";
   return "overdue";
@@ -123,84 +138,94 @@ function buildStages(client){
   const tpl = client.type==="onboarding" ? OB_STAGES : CY_STAGES;
   const base = new Date(client.startDate);
   return tpl.map(s=>{
-    const aStart = addDays(base, s.d);
-    const aEnd   = addDays(aStart, s.dur);
-    const start  = client.ov?.[s.key+"_s"] ? new Date(client.ov[s.key+"_s"]) : aStart;
-    const end    = client.ov?.[s.key+"_e"] ? new Date(client.ov[s.key+"_e"]) : aEnd;
-    const done   = !!(client.checks?.[s.key]);
-    const days   = Math.max(1, daysBetween(start, end));
-    return {...s, start, end, aStart, aEnd, done, dur:days, status:getStatus(start,days,done),
-      sOv:!!client.ov?.[s.key+"_s"], eOv:!!client.ov?.[s.key+"_e"]};
+    const aStart=addDays(base,s.d), aEnd=addDays(aStart,s.dur);
+    const start=client.ov?.[s.key+"_s"]?new Date(client.ov[s.key+"_s"]):aStart;
+    const end=client.ov?.[s.key+"_e"]?new Date(client.ov[s.key+"_e"]):aEnd;
+    const done=!!(client.checks?.[s.key]);
+    const days=Math.max(1,daysBetween(start,end));
+    return {...s,start,end,aStart,aEnd,done,dur:days,
+      status:getStatus(start,days,done),
+      sOv:!!client.ov?.[s.key+"_s"],eOv:!!client.ov?.[s.key+"_e"]};
   });
 }
 
-// ── SUPABASE ──────────────────────────────────────────────────────────
-const H = {apikey:SB_KEY, Authorization:`Bearer ${SB_KEY}`};
+// ── SUPABASE ───────────────────────────────────────────────────────
+const H={apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`};
 async function dbGet(){
-  // Select both data AND the table-level updated_at for reliable sync comparison
-  const r = await fetch(`${SB_URL}/rest/v1/cycle_tracker?id=eq.clients&select=data,updated_at`,{headers:H});
-  const j = await r.json();
+  const r=await fetch(`${SB_URL}/rest/v1/cycle_tracker?id=eq.clients&select=data,updated_at`,{headers:H});
+  const j=await r.json();
   if(!j?.[0]) return null;
-  const payload = j[0].data ?? {};
-  // Attach the table-level updated_at so poll can compare it reliably
-  payload._ts = j[0].updated_at;
-  return payload;
+  const p=j[0].data??{};
+  p._ts=j[0].updated_at;
+  return p;
 }
 async function dbSet(payload){
-  const ts = new Date().toISOString();
-  const r = await fetch(`${SB_URL}/rest/v1/cycle_tracker?id=eq.clients`,{
+  const ts=new Date().toISOString();
+  const r=await fetch(`${SB_URL}/rest/v1/cycle_tracker?id=eq.clients`,{
     method:"PATCH",
     headers:{...H,"Content-Type":"application/json",Prefer:"return=minimal"},
-    body:JSON.stringify({
-      data: payload,
-      updated_at: ts  // update the actual table column so all devices can compare
-    }),
+    body:JSON.stringify({data:payload,updated_at:ts}),
   });
-  if(!r.ok) throw new Error(`DB error ${r.status}`);
+  if(!r.ok) throw new Error(`DB ${r.status}`);
   return ts;
 }
 
-// ── DEFAULT CLIENTS ───────────────────────────────────────────────────
-const DEF_CLIENTS = [
-  {id:1,  name:"FZK",                             type:"cycle",      phase:"C1",  startDate:"2026-05-04", dur:30, pieces:0,  group:"OG Client",       checks:{},ov:{},pd:{},notes:""},
-  {id:2,  name:"Kaira (Anvisha + Dishant)",        type:"cycle",      phase:"C2",  startDate:"2025-10-06", dur:30, pieces:10, group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:3,  name:"Anshita",                          type:"cycle",      phase:"C11", startDate:"2026-04-15", dur:30, pieces:6,  group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:4,  name:"Karishma",                         type:"cycle",      phase:"C11", startDate:"2026-04-15", dur:30, pieces:0,  group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:5,  name:"Rhea (Poshan)",                    type:"cycle",      phase:"C3",  startDate:"2025-12-27", dur:30, pieces:10, group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:6,  name:"Lekhinee Desai",                   type:"cycle",      phase:"C2",  startDate:"2025-12-05", dur:30, pieces:12, group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:7,  name:"Shriya Kadam (Art Therapy)",        type:"cycle",      phase:"C3",  startDate:"2026-03-28", dur:30, pieces:0,  group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:8,  name:"Harshita (TSDC)",                  type:"cycle",      phase:"C4",  startDate:"2026-03-25", dur:30, pieces:0,  group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:9,  name:"Chef Rachi Gupta (The Bread Bar)", type:"cycle",      phase:"C3",  startDate:"2026-04-17", dur:30, pieces:6,  group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:10, name:"Namrata (Strokes by Namrata)",     type:"cycle",      phase:"C4",  startDate:"2026-04-17", dur:30, pieces:6,  group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:11, name:"Manasa (Kind Life)",               type:"cycle",      phase:"C2",  startDate:"2026-03-10", dur:30, pieces:0,  group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:12, name:"Yashna Garg (Yugap Wellness)",     type:"cycle",      phase:"C2",  startDate:"2026-03-17", dur:30, pieces:6,  group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:13, name:"Khanak Gupta (Sohrai Beauty)",     type:"cycle",      phase:"C3",  startDate:"2026-04-03", dur:30, pieces:0,  group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:14, name:"Tanisha (Protouch)",               type:"cycle",      phase:"C1",  startDate:"2026-05-04", dur:30, pieces:0,  group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:15, name:"Briana Chandiramani",              type:"cycle",      phase:"C1",  startDate:"2026-05-04", dur:30, pieces:0,  group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:16, name:"Kushal Shah (Mija)",               type:"cycle",      phase:"C2",  startDate:"2026-05-03", dur:30, pieces:4,  group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:17, name:"Hemangi (Be-clinical)",            type:"cycle",      phase:"C1",  startDate:"2026-04-02", dur:30, pieces:6,  group:"Active",          checks:{},ov:{},pd:{},notes:""},
-  {id:18, name:"Akanksha Pandey",                  type:"cycle",      phase:"C1",  startDate:"2026-02-25", dur:30, pieces:0,  group:"Getting Started", checks:{},ov:{},pd:{},notes:""},
-  {id:19, name:"Bonish (PAC Cosmetics)",           type:"cycle",      phase:"C3",  startDate:"2026-03-28", dur:30, pieces:4,  group:"Getting Started", checks:{},ov:{},pd:{},notes:""},
-  {id:20, name:"Garima",                           type:"cycle",      phase:"C1",  startDate:"2026-03-28", dur:30, pieces:0,  group:"Getting Started", checks:{},ov:{},pd:{},notes:""},
-  {id:21, name:"Earthful",                         type:"cycle",      phase:"C1",  startDate:"2026-05-04", dur:30, pieces:0,  group:"Getting Started", checks:{},ov:{},pd:{},notes:""},
-  {id:22, name:"Anandita",                         type:"cycle",      phase:"C1",  startDate:"2026-05-04", dur:30, pieces:0,  group:"Getting Started", checks:{},ov:{},pd:{},notes:""},
-  {id:23, name:"Kajol (Scribbld)",                 type:"cycle",      phase:"C1",  startDate:"2026-05-04", dur:30, pieces:0,  group:"Getting Started", checks:{},ov:{},pd:{},notes:""},
-  {id:24, name:"Vaishnavi (Neha S Salon)",         type:"onboarding", phase:"OB",  startDate:"2026-05-04", dur:30, pieces:4,  group:"Onboarding",      checks:{},ov:{},pd:{},notes:""},
-  {id:25, name:"Naina (Trendtree)",                type:"onboarding", phase:"OB",  startDate:"2026-05-04", dur:30, pieces:4,  group:"Onboarding",      checks:{},ov:{},pd:{},notes:""},
-  {id:26, name:"Nikunj (STAY Parfums)",            type:"onboarding", phase:"OB",  startDate:"2026-05-04", dur:30, pieces:4,  group:"Onboarding",      checks:{},ov:{},pd:{},notes:""},
-  {id:27, name:"Rashi Chowdhary (FZCO)",           type:"onboarding", phase:"OB",  startDate:"2026-05-04", dur:30, pieces:4,  group:"Onboarding",      checks:{},ov:{},pd:{},notes:""},
-  {id:28, name:"Plaay Chocolate",                  type:"onboarding", phase:"OB",  startDate:"2026-05-04", dur:30, pieces:4,  group:"Onboarding",      checks:{},ov:{},pd:{},notes:""},
+// ── DEFAULT CLIENTS ────────────────────────────────────────────────
+const DEF_CLIENTS=[
+  {id:1, name:"FZK",type:"cycle",phase:"C1",startDate:"2026-05-04",dur:30,pieces:0,group:"OG Client",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:2, name:"Kaira (Anvisha + Dishant)",type:"cycle",phase:"C2",startDate:"2025-10-06",dur:30,pieces:10,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:3, name:"Anshita",type:"cycle",phase:"C11",startDate:"2026-04-15",dur:30,pieces:6,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:4, name:"Karishma",type:"cycle",phase:"C11",startDate:"2026-04-15",dur:30,pieces:0,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:5, name:"Rhea (Poshan)",type:"cycle",phase:"C3",startDate:"2025-12-27",dur:30,pieces:10,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:6, name:"Lekhinee Desai",type:"cycle",phase:"C2",startDate:"2025-12-05",dur:30,pieces:12,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:7, name:"Shriya Kadam (Art Therapy)",type:"cycle",phase:"C3",startDate:"2026-03-28",dur:30,pieces:0,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:8, name:"Harshita (TSDC)",type:"cycle",phase:"C4",startDate:"2026-03-25",dur:30,pieces:0,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:9, name:"Chef Rachi Gupta (The Bread Bar)",type:"cycle",phase:"C3",startDate:"2026-04-17",dur:30,pieces:6,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:10,name:"Namrata (Strokes by Namrata)",type:"cycle",phase:"C4",startDate:"2026-04-17",dur:30,pieces:6,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:11,name:"Manasa (Kind Life)",type:"cycle",phase:"C2",startDate:"2026-03-10",dur:30,pieces:0,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:12,name:"Yashna Garg (Yugap Wellness)",type:"cycle",phase:"C2",startDate:"2026-03-17",dur:30,pieces:6,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:13,name:"Khanak Gupta (Sohrai Beauty)",type:"cycle",phase:"C3",startDate:"2026-04-03",dur:30,pieces:0,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:14,name:"Tanisha (Protouch)",type:"cycle",phase:"C1",startDate:"2026-05-04",dur:30,pieces:0,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:15,name:"Briana Chandiramani",type:"cycle",phase:"C1",startDate:"2026-05-04",dur:30,pieces:0,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:16,name:"Kushal Shah (Mija)",type:"cycle",phase:"C2",startDate:"2026-05-03",dur:30,pieces:4,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:17,name:"Hemangi (Be-clinical)",type:"cycle",phase:"C1",startDate:"2026-04-02",dur:30,pieces:6,group:"Active",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:18,name:"Akanksha Pandey",type:"cycle",phase:"C1",startDate:"2026-02-25",dur:30,pieces:0,group:"Getting Started",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:19,name:"Bonish (PAC Cosmetics)",type:"cycle",phase:"C3",startDate:"2026-03-28",dur:30,pieces:4,group:"Getting Started",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:20,name:"Garima",type:"cycle",phase:"C1",startDate:"2026-03-28",dur:30,pieces:0,group:"Getting Started",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:21,name:"Earthful",type:"cycle",phase:"C1",startDate:"2026-05-04",dur:30,pieces:0,group:"Getting Started",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:22,name:"Anandita",type:"cycle",phase:"C1",startDate:"2026-05-04",dur:30,pieces:0,group:"Getting Started",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:23,name:"Kajol (Scribbld)",type:"cycle",phase:"C1",startDate:"2026-05-04",dur:30,pieces:0,group:"Getting Started",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:24,name:"Vaishnavi (Neha S Salon)",type:"onboarding",phase:"OB",startDate:"2026-05-04",dur:30,pieces:4,group:"Onboarding",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:25,name:"Naina (Trendtree)",type:"onboarding",phase:"OB",startDate:"2026-05-04",dur:30,pieces:4,group:"Onboarding",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:26,name:"Nikunj (STAY Parfums)",type:"onboarding",phase:"OB",startDate:"2026-05-04",dur:30,pieces:4,group:"Onboarding",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:27,name:"Rashi Chowdhary (FZCO)",type:"onboarding",phase:"OB",startDate:"2026-05-04",dur:30,pieces:4,group:"Onboarding",checks:{},ov:{},pd:{},notes:"",tasks:{}},
+  {id:28,name:"Plaay Chocolate",type:"onboarding",phase:"OB",startDate:"2026-05-04",dur:30,pieces:4,group:"Onboarding",checks:{},ov:{},pd:{},notes:"",tasks:{}},
 ];
 
-// ── SHARED STYLE HELPERS ──────────────────────────────────────────────
-const iS = {background:W,border:`1.5px solid ${G3}`,borderRadius:8,padding:"7px 10px",color:BK,fontSize:13};
-const lS = {fontSize:10,color:G5,letterSpacing:0.8,display:"block",marginBottom:5,fontWeight:700};
+// ── SHARED STYLES ──────────────────────────────────────────────────
+const iS={background:W,border:`1.5px solid ${G2}`,borderRadius:8,padding:"7px 10px",color:BK,fontSize:13};
+const lS={fontSize:10,color:G4,letterSpacing:0.8,display:"block",marginBottom:4,fontWeight:600,textTransform:"uppercase"};
 
-// ── DATE FIELD WITH OVERRIDE ──────────────────────────────────────────
+// ── CONFETTI ───────────────────────────────────────────────────────
+function Confetti({onDone}){
+  const pieces=Array.from({length:12},(_,i)=>({id:i,x:Math.random()*100,color:[R,"#FFD700","#26DE81","#2563EB","#7C3AED","#FF6B6B"][i%6]}));
+  useEffect(()=>{const t=setTimeout(onDone,1200);return()=>clearTimeout(t);},[]);
+  return (
+    <div style={{position:"absolute",top:0,left:0,right:0,height:0,pointerEvents:"none",overflow:"visible",zIndex:10}}>
+      {pieces.map(p=>(
+        <div key={p.id} style={{position:"absolute",left:`${p.x}%`,top:0,width:8,height:8,
+          borderRadius:p.id%2?"50%":"2px",background:p.color,
+          animation:`confetti 1.1s ${p.id*0.05}s ease-out forwards`}}/>
+      ))}
+    </div>
+  );
+}
+
+// ── DATE FIELD ─────────────────────────────────────────────────────
 function DateFld({autoDate,ovKey,ovMap,onOv}){
-  const [ed,setEd] = useState(false);
-  const isOv = !!(ovMap?.[ovKey]);
-  const val  = isOv ? ovMap[ovKey] : toStr(autoDate);
+  const [ed,setEd]=useState(false);
+  const isOv=!!(ovMap?.[ovKey]);
+  const val=isOv?ovMap[ovKey]:toStr(autoDate);
   if(ed) return (
     <input type="date" defaultValue={val} autoFocus
       onBlur={e=>{if(e.target.value)onOv(ovKey,e.target.value);setEd(false);}}
@@ -211,72 +236,99 @@ function DateFld({autoDate,ovKey,ovMap,onOv}){
       color:isOv?R:G5,borderBottom:`1px dashed ${isOv?R:"transparent"}`,
       display:"inline-flex",alignItems:"center",gap:3}}>
       {fmtD(val)}
-      {isOv
-        ? <span onClick={e=>{e.stopPropagation();onOv(ovKey,null);}} title="Reset" style={{color:G3,fontSize:9}}>↺</span>
-        : <span style={{color:G3,fontSize:9}}>✎</span>}
+      {isOv?<span onClick={e=>{e.stopPropagation();onOv(ovKey,null);}} style={{color:G3,fontSize:9}}>↺</span>
+           :<span style={{color:G3,fontSize:9}}>✎</span>}
     </span>
   );
 }
 
-// ── CHECKBOX ──────────────────────────────────────────────────────────
-function CB({checked,color,onChange}){
+// ── CHECKBOX ───────────────────────────────────────────────────────
+function CB({checked,color,onChange,size=20}){
   return (
     <div onClick={e=>{e.stopPropagation();onChange(!checked);}} style={{
-      width:20,height:20,borderRadius:6,flexShrink:0,cursor:"pointer",
+      width:size,height:size,borderRadius:size*0.3,flexShrink:0,cursor:"pointer",
       border:`2px solid ${checked?color:G3}`,background:checked?color:W,
       display:"flex",alignItems:"center",justifyContent:"center",
-      transition:"all 0.15s",boxShadow:checked?`0 0 0 3px ${color}22`:"none"}}>
-      {checked&&<span style={{color:W,fontSize:11,fontWeight:900,lineHeight:1}}>✓</span>}
+      transition:"all 0.15s",boxShadow:checked?`0 0 0 3px ${color}18`:"none"}}>
+      {checked&&<span style={{color:W,fontSize:size*0.55,fontWeight:900,lineHeight:1}}>✓</span>}
     </div>
   );
 }
 
-// ── POSTING PLAN ──────────────────────────────────────────────────────
-function PostPlan({client,onUpdate}){
-  if(!client.pieces||client.pieces<1)
-    return <div style={{fontSize:11,color:G3,fontStyle:"italic",marginTop:6}}>Add piece count to see posting plan</div>;
-  const today=new Date();today.setHours(0,0,0,0);
-  const slots = Array.from({length:client.pieces},(_,i)=>{
-    const auto = addDays(new Date(client.startDate), Math.round((i/client.pieces)*(client.dur||30)));
-    const ov   = client.pd?.[`p${i+1}`];
-    const done = !!(client.pd?.[`p${i+1}_done`]);
-    return {i,auto,date:ov?new Date(ov):auto,isOv:!!ov,done};
-  });
-  function setPD(k,v){
-    const pd={...(client.pd||{})};
-    if(!v)delete pd[k];else pd[k]=v;
-    onUpdate({...client,pd});
+// ── SUB-TASKS ──────────────────────────────────────────────────────
+function SubTasks({stageKey,tasks,onUpdate,color}){
+  const [newTask,setNewTask]=useState("");
+  const [adding,setAdding]=useState(false);
+  const stageTasks=tasks?.[stageKey]||[];
+  function addTask(){
+    if(!newTask.trim()) return;
+    const updated=[...stageTasks,{id:Date.now(),label:newTask.trim(),done:false}];
+    onUpdate(stageKey,updated);
+    setNewTask("");setAdding(false);
   }
-  function toggleDone(i){
-    const k=`p${i+1}_done`;
-    const pd={...(client.pd||{})};
-    if(pd[k]) delete pd[k]; else pd[k]=true;
-    onUpdate({...client,pd});
+  function toggleTask(id){
+    onUpdate(stageKey,stageTasks.map(t=>t.id===id?{...t,done:!t.done}:t));
+  }
+  function removeTask(id){
+    onUpdate(stageKey,stageTasks.filter(t=>t.id!==id));
   }
   return (
-    <div className="postplan" style={{paddingLeft:30,marginTop:8}}>
-      <div style={{fontSize:10,color:G5,fontWeight:700,marginBottom:6,letterSpacing:0.5}}>POSTING SCHEDULE — tap date to edit, tick when posted</div>
+    <div style={{marginTop:8,paddingLeft:29}}>
+      {stageTasks.map(t=>(
+        <div key={t.id} style={{display:"flex",alignItems:"center",gap:7,padding:"4px 0",
+          borderBottom:`1px solid ${G1}`,marginBottom:2}}>
+          <CB checked={t.done} color={color} onChange={()=>toggleTask(t.id)} size={15}/>
+          <span style={{fontSize:12,color:t.done?G4:G7,flex:1,textDecoration:t.done?"line-through":"none"}}>{t.label}</span>
+          <button onClick={()=>removeTask(t.id)} style={{background:"none",border:"none",cursor:"pointer",color:G3,fontSize:12,padding:"0 2px",lineHeight:1}}>×</button>
+        </div>
+      ))}
+      {adding?(
+        <div style={{display:"flex",gap:6,marginTop:6}}>
+          <input value={newTask} onChange={e=>setNewTask(e.target.value)}
+            onKeyDown={e=>{if(e.key==="Enter")addTask();if(e.key==="Escape"){setAdding(false);setNewTask("");}}}
+            placeholder="Add task…" autoFocus
+            style={{...iS,flex:1,fontSize:12,padding:"5px 8px"}}/>
+          <button onClick={addTask} style={{padding:"5px 10px",background:color,border:"none",borderRadius:7,color:W,fontSize:12,fontWeight:700,cursor:"pointer"}}>Add</button>
+          <button onClick={()=>{setAdding(false);setNewTask("");}} style={{padding:"5px 8px",background:G1,border:"none",borderRadius:7,color:G5,fontSize:12,cursor:"pointer"}}>✕</button>
+        </div>
+      ):(
+        <button onClick={()=>setAdding(true)} style={{marginTop:5,fontSize:11,color:G4,background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:4,padding:"2px 0"}}>
+          <span style={{fontSize:14,lineHeight:1}}>+</span> Add task
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── POSTING PLAN ───────────────────────────────────────────────────
+function PostPlan({client,onUpdate}){
+  if(!client.pieces||client.pieces<1)
+    return <div style={{fontSize:11,color:G3,fontStyle:"italic",marginTop:6,paddingLeft:29}}>Add piece count to see posting plan</div>;
+  const today=new Date();today.setHours(0,0,0,0);
+  const slots=Array.from({length:client.pieces},(_,i)=>{
+    const auto=addDays(new Date(client.startDate),Math.round((i/client.pieces)*(client.dur||30)));
+    const ov=client.pd?.[`p${i+1}`];
+    const done=!!(client.pd?.[`p${i+1}_done`]);
+    return {i,auto,date:ov?new Date(ov):auto,isOv:!!ov,done};
+  });
+  function setPD(k,v){const pd={...(client.pd||{})};if(!v)delete pd[k];else pd[k]=v;onUpdate({...client,pd});}
+  function toggleDone(i){const k=`p${i+1}_done`;const pd={...(client.pd||{})};if(pd[k])delete pd[k];else pd[k]=true;onUpdate({...client,pd});}
+  return (
+    <div className="postplan" style={{paddingLeft:29,marginTop:8}}>
+      <div style={{fontSize:10,color:G4,fontWeight:600,marginBottom:7,letterSpacing:0.4}}>POSTING SCHEDULE - tap date to edit</div>
       <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
         {slots.map(s=>{
           const past=s.date<today;
           return (
-            <div key={s.i} style={{
-              background:s.done?"#F0FDF4":past?BB:G1,
-              border:`1.5px solid ${s.done?"#86EFAC":s.isOv?R:past?"#93C5FD":G3}`,
-              borderRadius:8,padding:"5px 10px",
-              display:"flex",alignItems:"center",gap:6,
-              opacity:s.done?0.8:1,
-            }}>
-              {/* Checkbox for posted */}
-              <div onClick={()=>toggleDone(s.i)} style={{
-                width:16,height:16,borderRadius:4,flexShrink:0,cursor:"pointer",
-                border:`2px solid ${s.done?GR:G3}`,
-                background:s.done?GR:W,
-                display:"flex",alignItems:"center",justifyContent:"center",
-              }}>
+            <div key={s.i} style={{background:s.done?GB:past?BB:G0,
+              border:`1.5px solid ${s.done?"#86EFAC":s.isOv?R:past?"#93C5FD":G2}`,
+              borderRadius:8,padding:"5px 10px",display:"flex",alignItems:"center",gap:6}}>
+              <div onClick={()=>toggleDone(s.i)} style={{width:15,height:15,borderRadius:4,flexShrink:0,cursor:"pointer",
+                border:`2px solid ${s.done?GR:G3}`,background:s.done?GR:W,
+                display:"flex",alignItems:"center",justifyContent:"center"}}>
                 {s.done&&<span style={{color:W,fontSize:9,fontWeight:900,lineHeight:1}}>✓</span>}
               </div>
-              <span style={{fontSize:10,fontWeight:700,color:s.done?GR:past?BL:G7,textDecoration:s.done?"line-through":"none"}}>P{s.i+1}</span>
+              <span style={{fontSize:10,fontWeight:600,color:s.done?GR:past?BL:G7,textDecoration:s.done?"line-through":"none"}}>P{s.i+1}</span>
               <DateFld autoDate={s.auto} ovKey={`p${s.i+1}`} ovMap={client.pd||{}} onOv={(k,v)=>setPD(k,v)}/>
             </div>
           );
@@ -286,101 +338,104 @@ function PostPlan({client,onUpdate}){
   );
 }
 
-// ── CLIENT CARD ───────────────────────────────────────────────────────
+// ── CLIENT CARD ────────────────────────────────────────────────────
 function Card({client,onUpdate,onDelete,groups,isDrag,onDragStart,onDragEnd}){
-  const [open,setOpen] = useState(false);
-  const stages = useMemo(()=>buildStages(client),[client.startDate,client.type,JSON.stringify(client.checks),JSON.stringify(client.ov)]);
+  const [open,setOpen]=useState(false);
+  const [tab,setTab]=useState("timeline"); // timeline | posting | notes
+  const [showConfetti,setShowConfetti]=useState(false);
+  const stages=useMemo(()=>buildStages(client),[client.startDate,client.type,JSON.stringify(client.checks),JSON.stringify(client.ov)]);
 
-  const dur     = client.dur||30;
-  const el      = elapsed(client.startDate);
-  const delayed = el>dur;
-  const dLeft   = dur-el;
-  const isOB    = client.type==="onboarding";
-  const phC     = isOB ? PU : R;
-  const phBg    = isOB ? PB : RL;
+  const dur=client.dur||30;
+  const el=elapsed(client.startDate);
+  const delayed=el>dur;
+  const dLeft=dur-el;
+  const isOB=client.type==="onboarding";
+  const phC=isOB?PU:R;
 
-  const total    = stages.length;
-  const doneN    = stages.filter(s=>s.done).length;
-  const progress = total>0 ? Math.round((doneN/total)*100) : 0;
-  const overdue  = stages.filter(s=>s.status==="overdue").length;
-  const active   = stages.filter(s=>s.status==="active").length;
+  const total=stages.length;
+  const doneN=stages.filter(s=>s.done).length;
+  const progress=total>0?Math.round((doneN/total)*100):0;
+  const overdue=stages.filter(s=>s.status==="overdue").length;
+  const active=stages.filter(s=>s.status==="active").length;
+  const allDone=doneN===total&&total>0;
 
-  const SC = {
-    done:    {label:"Done ✓",bg:GB,   border:"#86EFAC",dot:GR, text:GR},
-    active:  {label:"Active",bg:"#f0fdf4",border:"#86EFAC",dot:GR, text:GR},
-    upcoming:{label:"Upcoming",bg:G0,  border:G3,     dot:G5,text:G5},
-    overdue: {label:"Overdue",bg:RL,   border:RM,     dot:R,  text:RD},
-  };
+  // fire confetti when newly complete
+  const prevDoneRef=useRef(allDone);
+  useEffect(()=>{if(!prevDoneRef.current&&allDone)setShowConfetti(true);prevDoneRef.current=allDone;},[allDone]);
 
-  function ov(key,val){
-    const o={...(client.ov||{})};
-    if(val===null)delete o[key];else o[key]=val;
-    onUpdate({...client,ov:o});
-  }
+  const SC={done:{label:"Done",bg:GB,border:"#BBF7D0",text:GR},active:{label:"Active",bg:"#f0fdf4",border:"#86EFAC",text:GR},upcoming:{label:"Upcoming",bg:G0,border:G2,text:G4},overdue:{label:"Overdue",bg:RL,border:RM,text:RD}};
+
+  function ov(key,val){const o={...(client.ov||{})};if(val===null)delete o[key];else o[key]=val;onUpdate({...client,ov:o});}
+  function updateTasks(stageKey,tasks){onUpdate({...client,tasks:{...(client.tasks||{}),[stageKey]:tasks}});}
 
   return (
     <div draggable onDragStart={e=>onDragStart(e,client.id)} onDragEnd={onDragEnd}
-      className="fade-up"
-      style={{background:W,border:`1.5px solid ${delayed?RM:open?"#D1D5DB":G1}`,
-        borderLeft:`4px solid ${phC}`,borderRadius:16,overflow:"hidden",
-        boxShadow:open?"0 4px 20px rgba(0,0,0,0.08)":"0 1px 4px rgba(0,0,0,0.05)",
-        opacity:isDrag?0.4:1,cursor:"grab"}}>
+      className="fade-up" style={{position:"relative",
+        background:W,
+        border:`1px solid ${delayed?RM:open?G2:G1}`,
+        borderRadius:14,overflow:"hidden",
+        boxShadow:open?"0 2px 16px rgba(0,0,0,0.06)":"0 1px 3px rgba(0,0,0,0.04)",
+        opacity:isDrag?0.4:1,cursor:"grab",transition:"box-shadow 0.2s,border-color 0.2s"}}>
+
+      {showConfetti&&<Confetti onDone={()=>setShowConfetti(false)}/>}
+
+      {/* Slim color accent - only a top stripe, not a full left border */}
+      <div style={{height:3,background:delayed?`linear-gradient(90deg,${R},${OR})`:`linear-gradient(90deg,${phC}88,${phC}22)`,transition:"background 0.3s"}}/>
 
       {/* Header */}
-      <div className="chdr" style={{padding:"14px 18px",display:"flex",alignItems:"center",gap:12,userSelect:"none"}}
+      <div className="chdr" style={{padding:"13px 16px",display:"flex",alignItems:"center",gap:11,userSelect:"none"}}
         onClick={()=>setOpen(o=>!o)}>
-        <span style={{color:G3,fontSize:14,flexShrink:0}}>⠿</span>
-        <div className="cavatar" style={{width:38,height:38,borderRadius:10,flexShrink:0,
-          background:phBg,display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:15,fontWeight:800,color:phC}}>
+        <span style={{color:G3,fontSize:13,flexShrink:0,cursor:"grab"}}>⠿</span>
+        <div className="cavatar" style={{width:36,height:36,borderRadius:9,flexShrink:0,
+          background:isOB?PB:G1,display:"flex",alignItems:"center",justifyContent:"center",
+          fontSize:14,fontWeight:800,color:isOB?PU:G7}}>
           {client.name.charAt(0).toUpperCase()}
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
             <span style={{fontSize:14,fontWeight:700,color:BK}}>{client.name}</span>
-            <span style={{fontSize:10,padding:"2px 7px",borderRadius:20,background:phBg,color:phC,fontWeight:700}}>
+            <span style={{fontSize:10,padding:"1px 6px",borderRadius:20,background:isOB?PB:G1,color:isOB?PU:G5,fontWeight:600}}>
               {isOB?"Onboarding":client.phase||"Cycle"}
             </span>
-            {delayed&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:20,background:RL,color:RD,fontWeight:600}}>⚠ {el-dur}d over</span>}
-            {!delayed&&overdue>0&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:20,background:RL,color:RD}}>{overdue} overdue</span>}
-            {active>0&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:20,background:GB,color:GR}}>{active} active</span>}
-            {doneN===total&&total>0&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:20,background:GB,color:GR,fontWeight:700}}>✓ Complete</span>}
+            {delayed&&<span style={{fontSize:10,padding:"1px 6px",borderRadius:20,background:RL,color:RD,fontWeight:600}}>⚠ {el-dur}d over</span>}
+            {!delayed&&overdue>0&&<span style={{fontSize:10,padding:"1px 6px",borderRadius:20,background:RL,color:RD}}>{overdue} overdue</span>}
+            {active>0&&!allDone&&<span style={{fontSize:10,padding:"1px 6px",borderRadius:20,background:GB,color:GR}}>{active} active</span>}
+            {allDone&&<span className="pop-in" style={{fontSize:10,padding:"1px 6px",borderRadius:20,background:GB,color:GR,fontWeight:700}}>✓ Complete 🎉</span>}
           </div>
-          <div style={{fontSize:11,color:G5,marginTop:3}}>
-            {fmtD(client.startDate)} → {fmtD(addDays(new Date(client.startDate),dur))}
+          <div style={{fontSize:11,color:G4,marginTop:2}}>
+            {fmtD(client.startDate)} to {fmtD(addDays(new Date(client.startDate),dur))}
             {" · "}
-            <span style={{color:delayed?R:dLeft<=5&&dLeft>0?OR:G5,fontWeight:delayed?700:400}}>
-              {delayed?`${el} days (${dur} planned)`:dLeft>0?`${dLeft}d left`:`Day ${dur}`}
+            <span style={{color:delayed?R:dLeft<=5&&dLeft>0?OR:G4,fontWeight:delayed?700:400}}>
+              {delayed?`${el}d (${dur} planned)`:dLeft>0?`${dLeft}d left`:`Day ${dur}`}
             </span>
             {client.pieces>0&&` · ${client.pieces} pieces`}
           </div>
         </div>
-        <div className="cprog" style={{width:80,flexShrink:0}}>
+        <div className="cprog" style={{width:76,flexShrink:0}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-            <span style={{fontSize:9,color:G5}}>{doneN}/{total}</span>
-            <span style={{fontSize:9,color:progress===100?GR:G7,fontWeight:600}}>{progress}%</span>
+            <span style={{fontSize:9,color:G4}}>{doneN}/{total}</span>
+            <span style={{fontSize:9,color:progress===100?GR:G5,fontWeight:600}}>{progress}%</span>
           </div>
-          <div style={{height:5,background:G1,borderRadius:99,overflow:"hidden"}}>
+          <div style={{height:4,background:G1,borderRadius:99,overflow:"hidden"}}>
             <div style={{height:"100%",width:`${progress}%`,
-              background:progress===100?GR:`linear-gradient(90deg,${R},${RD})`,
+              background:progress===100?GR:`linear-gradient(90deg,${phC},${phC}aa)`,
               borderRadius:99,transition:"width 0.4s"}}/>
           </div>
         </div>
-        <span style={{color:G3,fontSize:12,transform:open?"rotate(180deg)":"none",transition:"transform 0.2s",flexShrink:0}}>▼</span>
+        <span style={{color:G3,fontSize:11,transform:open?"rotate(180deg)":"none",transition:"transform 0.2s",flexShrink:0}}>▼</span>
       </div>
 
       {/* Expanded */}
       {open&&(
-        <div className="cexp" style={{borderTop:`1.5px solid ${G1}`,padding:"0 18px 20px",background:G0}}>
+        <div className="cexp" style={{borderTop:`1px solid ${G1}`,background:G0}}>
           {/* Edit fields */}
-          <div className="cedit" style={{display:"flex",gap:10,padding:"14px 0 14px",flexWrap:"wrap",alignItems:"flex-end"}}>
-            {/* Type toggle */}
+          <div className="cedit" style={{display:"flex",gap:10,padding:"12px 16px",flexWrap:"wrap",alignItems:"flex-end",borderBottom:`1px solid ${G1}`,background:W}}>
             <div>
-              <label style={lS}>TYPE</label>
-              <div style={{display:"flex",borderRadius:8,overflow:"hidden",border:`1.5px solid ${G3}`}}>
+              <label style={lS}>Type</label>
+              <div style={{display:"flex",borderRadius:8,overflow:"hidden",border:`1.5px solid ${G2}`}}>
                 {["cycle","onboarding"].map(t=>(
-                  <button key={t} onClick={e=>{e.stopPropagation();onUpdate({...client,type:t,checks:{},ov:{},pd:{}});}}
-                    style={{padding:"6px 12px",fontSize:12,fontWeight:600,border:"none",cursor:"pointer",
+                  <button key={t} onClick={e=>{e.stopPropagation();onUpdate({...client,type:t,checks:{},ov:{},pd:{},tasks:{}});}}
+                    style={{padding:"5px 11px",fontSize:12,fontWeight:600,border:"none",cursor:"pointer",
                       background:client.type===t?(t==="onboarding"?PU:R):W,
                       color:client.type===t?W:G5}}>
                     {t==="cycle"?"Cycle":"Onboarding"}
@@ -388,228 +443,171 @@ function Card({client,onUpdate,onDelete,groups,isDrag,onDragStart,onDragEnd}){
                 ))}
               </div>
             </div>
-            {[
-              {l:"NAME",k:"name",t:"text",w:165},
-              {l:"PHASE",k:"phase",t:"text",w:58},
-              {l:"START DATE",k:"startDate",t:"date",w:140},
-              {l:"DURATION (days)",k:"dur",t:"number",w:80},
-              {l:"PIECES",k:"pieces",t:"number",w:65},
-            ].map(f=>(
+            {[{l:"Name",k:"name",t:"text",w:160},{l:"Phase",k:"phase",t:"text",w:55},{l:"Start",k:"startDate",t:"date",w:135},{l:"Duration",k:"dur",t:"number",w:75},{l:"Pieces",k:"pieces",t:"number",w:62}].map(f=>(
               <div key={f.k}>
                 <label style={lS}>{f.l}</label>
                 <input type={f.t} value={client[f.k]??""} placeholder={f.t==="number"?"30":""}
                   onChange={e=>onUpdate({...client,[f.k]:f.t==="number"?(parseInt(e.target.value)||0):e.target.value})}
-                  onClick={e=>e.stopPropagation()}
-                  style={{...iS,width:f.w}}/>
+                  onClick={e=>e.stopPropagation()} style={{...iS,width:f.w}}/>
               </div>
             ))}
-            {delayed&&(
-              <div>
-                <label style={lS}>ACTUAL DAYS</label>
-                <input type="number" value={client.actualDays??el} min={dur}
-                  onChange={e=>onUpdate({...client,actualDays:parseInt(e.target.value)||null})}
-                  style={{...iS,width:90,borderColor:R}}/>
-              </div>
-            )}
+            {delayed&&<div><label style={lS}>Actual days</label><input type="number" value={client.actualDays??el} min={dur} onChange={e=>onUpdate({...client,actualDays:parseInt(e.target.value)||null})} style={{...iS,width:86,borderColor:R}}/></div>}
             <div>
-              <label style={lS}>GROUP</label>
-              <select value={client.group} onChange={e=>onUpdate({...client,group:e.target.value})}
-                onClick={e=>e.stopPropagation()} style={{...iS,width:150,cursor:"pointer"}}>
+              <label style={lS}>Group</label>
+              <select value={client.group} onChange={e=>onUpdate({...client,group:e.target.value})} onClick={e=>e.stopPropagation()} style={{...iS,width:148,cursor:"pointer"}}>
                 {groups.map(g=><option key={g} value={g}>{g}</option>)}
               </select>
             </div>
-            <button onClick={e=>{e.stopPropagation();onDelete();}}
-              style={{padding:"7px 13px",background:RL,border:`1.5px solid ${RM}`,borderRadius:8,
-                color:RD,cursor:"pointer",fontSize:12,fontWeight:500,marginLeft:"auto"}}>
-              Remove
-            </button>
+            <button onClick={e=>{e.stopPropagation();onDelete();}} style={{padding:"6px 12px",background:RL,border:`1px solid ${RM}`,borderRadius:8,color:RD,cursor:"pointer",fontSize:12,marginLeft:"auto"}}>Remove</button>
           </div>
 
-          {/* Notes */}
-          <div style={{marginBottom:14}}>
-            <label style={lS}>NOTES</label>
-            <textarea value={client.notes||""} onChange={e=>onUpdate({...client,notes:e.target.value})}
-              placeholder="Add notes…" rows={2}
-              style={{...iS,width:"100%",resize:"vertical",fontSize:12,lineHeight:1.5}}/>
-          </div>
-
-          {/* Timeline bar */}
-          <div style={{display:"flex",height:6,borderRadius:99,overflow:"hidden",marginBottom:14,background:G1}}>
-            {stages.map(s=>(
-              <div key={s.key} style={{flex:s.dur,background:s.done?GR:s.color,
-                opacity:s.status==="upcoming"?0.2:s.status==="done"?0.6:1}}/>
+          {/* Tab bar */}
+          <div style={{display:"flex",gap:0,borderBottom:`1px solid ${G1}`,background:W,padding:"0 16px"}}>
+            {[["timeline","Timeline"],["posting","Posting"],["notes","Notes"]].map(([t,l])=>(
+              <button key={t} onClick={()=>setTab(t)} style={{padding:"10px 14px",fontSize:12,fontWeight:tab===t?700:500,border:"none",cursor:"pointer",background:"none",color:tab===t?BK:G5,borderBottom:tab===t?`2px solid ${R}`:"2px solid transparent",marginBottom:-1,transition:"color 0.15s"}}>
+                {l}
+              </button>
             ))}
           </div>
 
-          {/* Stage rows */}
-          <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            {stages.map(s=>{
-              const sc=SC[s.status];
-              return (
-                <div key={s.key} style={{background:sc.bg,border:`1.5px solid ${sc.border}`,borderRadius:10,padding:"10px 14px"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:9,flexWrap:"wrap"}}>
-                    <CB checked={s.done} color={s.color} onChange={v=>onUpdate({...client,checks:{...(client.checks||{}),[s.key]:v}})}/>
-                    <span style={{fontSize:13,fontWeight:600,color:s.done?G3:BK,flex:1,
-                      textDecoration:s.done?"line-through":"none",minWidth:100}}>
-                      {s.label}
-                    </span>
-                    <div className="stageDates" style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-                      <span style={{fontSize:10,color:G5}}>From:</span>
-                      <DateFld autoDate={s.aStart} ovKey={s.key+"_s"} ovMap={client.ov||{}} onOv={ov}/>
-                      <span style={{fontSize:10,color:G3}}>→</span>
-                      <span style={{fontSize:10,color:G5}}>To:</span>
-                      <DateFld autoDate={s.aEnd} ovKey={s.key+"_e"} ovMap={client.ov||{}} onOv={ov}/>
-                    </div>
-                    <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,whiteSpace:"nowrap",fontWeight:500,
-                      background:s.done?GB:s.status==="active"?GB:s.status==="overdue"?RL:G1,
-                      color:sc.text}}>{sc.label}</span>
-                  </div>
-                  {s.key==="posting"&&<PostPlan client={client} onUpdate={onUpdate}/>}
+          <div style={{padding:"14px 16px"}}>
+            {/* TIMELINE TAB */}
+            {tab==="timeline"&&(
+              <>
+                {/* Mini timeline bar */}
+                <div style={{display:"flex",height:4,borderRadius:99,overflow:"hidden",marginBottom:14,background:G1}}>
+                  {stages.map(s=><div key={s.key} style={{flex:s.dur,background:s.done?GR:s.color,opacity:s.status==="upcoming"?0.2:s.status==="done"?0.6:1}}/>)}
                 </div>
-              );
-            })}
+                <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                  {stages.map(s=>{
+                    const sc=SC[s.status];
+                    const stageTasks=client.tasks?.[s.key]||[];
+                    const tasksDone=stageTasks.filter(t=>t.done).length;
+                    return (
+                      <div key={s.key} style={{background:sc.bg,border:`1px solid ${sc.border}`,borderRadius:10,padding:"9px 13px"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                          <CB checked={s.done} color={s.color} onChange={v=>onUpdate({...client,checks:{...(client.checks||{}),[s.key]:v}})}/>
+                          <span style={{fontSize:13,fontWeight:600,color:s.done?G4:BK,flex:1,textDecoration:s.done?"line-through":"none",minWidth:100}}>{s.label}</span>
+                          {stageTasks.length>0&&<span style={{fontSize:10,color:G4,background:G1,padding:"1px 6px",borderRadius:20}}>{tasksDone}/{stageTasks.length}</span>}
+                          <div className="stageDates" style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
+                            <span style={{fontSize:10,color:G4}}>From:</span>
+                            <DateFld autoDate={s.aStart} ovKey={s.key+"_s"} ovMap={client.ov||{}} onOv={ov}/>
+                            <span style={{fontSize:10,color:G3}}>to</span>
+                            <DateFld autoDate={s.aEnd} ovKey={s.key+"_e"} ovMap={client.ov||{}} onOv={ov}/>
+                          </div>
+                          <span style={{fontSize:10,padding:"1px 8px",borderRadius:20,fontWeight:500,
+                            background:s.done?GB:s.status==="active"?GB:s.status==="overdue"?RL:G1,
+                            color:sc.text,whiteSpace:"nowrap"}}>{sc.label}</span>
+                        </div>
+                        <SubTasks stageKey={s.key} tasks={client.tasks||{}} onUpdate={updateTasks} color={s.color}/>
+                      </div>
+                    );
+                  })}
+                </div>
+                {delayed&&<div style={{marginTop:10,padding:"9px 13px",background:RL,border:`1px solid ${RM}`,borderRadius:10,fontSize:12,color:RD,display:"flex",gap:7,alignItems:"center"}}><span>⚠</span><span>This {isOB?"onboarding":"cycle"} is <strong>{el-dur} days over</strong> the {dur}-day plan.</span></div>}
+              </>
+            )}
+            {/* POSTING TAB */}
+            {tab==="posting"&&(
+              <div>
+                <div style={{fontSize:12,color:G5,marginBottom:10}}>Posting dates spread across {dur} days. Tick each post when published.</div>
+                <PostPlan client={client} onUpdate={onUpdate}/>
+              </div>
+            )}
+            {/* NOTES TAB */}
+            {tab==="notes"&&(
+              <div>
+                <label style={lS}>Notes</label>
+                <textarea value={client.notes||""} onChange={e=>onUpdate({...client,notes:e.target.value})}
+                  placeholder="Add client notes, context, reminders…" rows={5}
+                  style={{...iS,width:"100%",resize:"vertical",fontSize:13,lineHeight:1.6,marginTop:4}}/>
+              </div>
+            )}
           </div>
-
-          {/* Delay banner */}
-          {delayed&&(
-            <div style={{marginTop:12,padding:"10px 14px",background:RL,border:`1.5px solid ${RM}`,
-              borderRadius:10,fontSize:12,color:RD,display:"flex",gap:8,alignItems:"center"}}>
-              <span>⚠</span>
-              <span>This {isOB?"onboarding":"cycle"} is <strong>{el-dur} days over</strong> the {dur}-day plan.</span>
-            </div>
-          )}
         </div>
       )}
     </div>
   );
 }
 
-// ── AI CHAT ───────────────────────────────────────────────────────────
+// ── AI CHAT ────────────────────────────────────────────────────────
 function AIChat({clients,groups,onClose}){
-  const [msgs,setMsgs] = useState([{role:"assistant",content:"Hi! I know all your FZK Media clients. Ask me anything — \"Who's overdue?\", \"What should we focus on this week?\", \"Anshita's status?\""}]);
-  const [inp,setInp]   = useState("");
-  const [load,setLoad] = useState(false);
-  const botRef = useRef(null);
+  const [msgs,setMsgs]=useState([{role:"assistant",content:"Hi! I know all your FZK Media clients. Ask me anything - who is overdue, what to focus on this week, or a specific client status."}]);
+  const [inp,setInp]=useState("");
+  const [load,setLoad]=useState(false);
+  const botRef=useRef(null);
   useEffect(()=>{botRef.current?.scrollIntoView({behavior:"smooth"});},[msgs]);
 
   async function send(){
     if(!inp.trim()||load) return;
-    const um = {role:"user",content:inp.trim()};
-    setMsgs(m=>[...m,um]);
-    setInp("");
-    setLoad(true);
-
-    const today = new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-    const data  = clients.map(c=>{
-      const stgs = buildStages(c);
-      return {name:c.name,type:c.type,phase:c.phase,group:c.group,
-        startDate:c.startDate,dur:c.dur||30,pieces:c.pieces,
-        daysElapsed:elapsed(c.startDate),isDelayed:elapsed(c.startDate)>(c.dur||30),
-        notes:c.notes||"",
-        stages:stgs.map(s=>({name:s.label,status:s.status,start:toStr(s.start),done:s.done}))};
+    const um={role:"user",content:inp.trim()};
+    setMsgs(m=>[...m,um]);setInp("");setLoad(true);
+    const today=new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+    const data=clients.map(c=>{
+      const stgs=buildStages(c);
+      return {name:c.name,type:c.type,phase:c.phase,group:c.group,startDate:c.startDate,dur:c.dur||30,pieces:c.pieces,daysElapsed:elapsed(c.startDate),isDelayed:elapsed(c.startDate)>(c.dur||30),notes:c.notes||"",stages:stgs.map(s=>({name:s.label,status:s.status,start:toStr(s.start),done:s.done}))};
     });
-
-    const sys = `You are the internal AI for FZK Media, a personal branding agency. Today: ${today}.
-FZK manages Instagram/LinkedIn for founders — mainly storytelling reels. 
-Onboarding (30d) → Cycle 1 (day 31) → C2 → C3 (~4 months total).
-Groups: ${groups.join(", ")}
-Client data: ${JSON.stringify(data)}
-Answer specifically and concisely. Use bullets. Format dates as DD Mon.`;
-
+    const sys=`You are the internal assistant for FZK Media. Today is ${today}. FZK manages Instagram and LinkedIn for founders, mainly storytelling reels. Onboarding is 30 days, then Cycle 1 starts on day 31, followed by C2 and C3 over roughly 4 months total. Groups: ${groups.join(", ")}. Client data: ${JSON.stringify(data)}. Respond naturally and conversationally. No markdown formatting, no asterisks, no em dashes. Use plain text only. Be specific and concise. When listing items, use a simple numbered list or line breaks, not bullet points with asterisks.`;
     try{
-      // Messages must start with user role — strip leading assistant messages
-      // Build clean message history — Anthropic requires starting with user role
-      const allMsgs = [...msgs, um].filter(m=>m.role==="user"||m.role==="assistant");
-      let startAt = 0;
-      while(startAt < allMsgs.length && allMsgs[startAt].role==="assistant") startAt++;
-      const apiMsgs = allMsgs.slice(startAt).map(m=>({role:m.role,content:m.content}));
-      if(apiMsgs.length===0) apiMsgs.push({role:"user",content:um.content});
-
-      const res = await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST",
-        headers:{"Content-Type":"application/json","x-api-key":getKey(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:800,system:sys,messages:apiMsgs}),
-      });
-      const d = await res.json();
+      const all=[...msgs,um].filter(m=>m.role==="user"||m.role==="assistant");
+      let i=0;while(i<all.length&&all[i].role==="assistant")i++;
+      const apiMsgs=all.slice(i).map(m=>({role:m.role,content:m.content}));
+      if(!apiMsgs.length||apiMsgs[0].role!=="user") apiMsgs.unshift({role:"user",content:um.content});
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":getKey(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:800,system:sys,messages:apiMsgs})});
+      const d=await res.json();
       if(d.error) throw new Error(d.error.message);
-      setMsgs(m=>[...m,{role:"assistant",content:d.content?.[0]?.text||"No response."}]);
-    } catch(e){
-      setMsgs(m=>[...m,{role:"assistant",content:`Error: ${e.message}.\n\nMake sure your API key is saved (tap 🔑 in the nav).`}]);
-    } finally{setLoad(false);}
+      const raw=d.content?.[0]?.text||"No response.";
+      setMsgs(m=>[...m,{role:"assistant",content:cleanAI(raw)}]);
+    } catch(e){setMsgs(m=>[...m,{role:"assistant",content:`Could not get a response: ${e.message}. Check your API key (tap the key icon in the nav).`}]);}
+    finally{setLoad(false);}
   }
 
   return (
-    <div className="ai-panel" style={{position:"fixed",right:0,top:0,bottom:0,width:380,background:W,
-      boxShadow:"-4px 0 24px rgba(0,0,0,0.12)",zIndex:1000,display:"flex",flexDirection:"column"}}>
-      <div style={{padding:"16px 20px",background:R,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+    <div className="ai-panel" style={{position:"fixed",right:0,top:0,bottom:0,width:380,background:W,boxShadow:"-2px 0 20px rgba(0,0,0,0.1)",zIndex:1000,display:"flex",flexDirection:"column"}}>
+      <div style={{padding:"14px 18px",background:R,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
-          <div style={{fontSize:15,fontWeight:800,color:W}}>✦ FZK AI</div>
-          <div style={{fontSize:11,color:"rgba(255,255,255,0.65)"}}>Knows all your clients</div>
+          <div style={{fontSize:14,fontWeight:800,color:W}}>FZK AI</div>
+          <div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>Knows all your clients</div>
         </div>
-        <button onClick={onClose} style={{background:"rgba(255,255,255,0.2)",border:"none",cursor:"pointer",
-          fontSize:16,color:W,borderRadius:8,padding:"4px 10px"}}>✕</button>
+        <button onClick={onClose} style={{background:"rgba(255,255,255,0.15)",border:"none",cursor:"pointer",fontSize:15,color:W,borderRadius:8,padding:"4px 10px"}}>✕</button>
       </div>
-      <div style={{flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{flex:1,overflowY:"auto",padding:"14px 18px",display:"flex",flexDirection:"column",gap:10}}>
         {msgs.map((m,i)=>(
           <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
-            <div style={{maxWidth:"85%",padding:"10px 14px",fontSize:13,lineHeight:1.6,whiteSpace:"pre-wrap",
-              borderRadius:m.role==="user"?"14px 14px 4px 14px":"14px 14px 14px 4px",
-              background:m.role==="user"?R:G0,
-              border:m.role==="user"?"none":`1.5px solid ${G1}`,
-              color:m.role==="user"?W:BK}}>
-              {m.content}
-            </div>
+            <div style={{maxWidth:"85%",padding:"9px 13px",fontSize:13,lineHeight:1.65,whiteSpace:"pre-wrap",
+              borderRadius:m.role==="user"?"13px 13px 3px 13px":"13px 13px 13px 3px",
+              background:m.role==="user"?R:G0,border:m.role==="user"?"none":`1px solid ${G1}`,
+              color:m.role==="user"?W:BK}}>{m.content}</div>
           </div>
         ))}
-        {load&&(
-          <div style={{display:"flex",gap:4,padding:"10px 14px",background:G0,border:`1.5px solid ${G1}`,
-            borderRadius:"14px 14px 14px 4px",width:"fit-content"}}>
-            {[0,1,2].map(i=>(
-              <div key={i} style={{width:6,height:6,borderRadius:"50%",background:G3,
-                animation:`bounce 1s ${i*0.15}s infinite`}}/>
-            ))}
-          </div>
-        )}
+        {load&&<div style={{display:"flex",gap:4,padding:"9px 13px",background:G0,border:`1px solid ${G1}`,borderRadius:"13px 13px 13px 3px",width:"fit-content"}}>
+          {[0,1,2].map(i=><div key={i} style={{width:5,height:5,borderRadius:"50%",background:G3,animation:`bounce 1s ${i*0.15}s infinite`}}/>)}
+        </div>}
         <div ref={botRef}/>
       </div>
-      <div style={{padding:"0 16px 10px",display:"flex",gap:5,flexWrap:"wrap"}}>
+      <div style={{padding:"0 14px 8px",display:"flex",gap:5,flexWrap:"wrap"}}>
         {["Who's overdue?","Who's delayed?","This week","Anshita's status"].map(q=>(
-          <button key={q} onClick={()=>setInp(q)}
-            style={{fontSize:10,padding:"3px 9px",borderRadius:20,border:`1.5px solid ${G3}`,
-              background:G0,color:G7,cursor:"pointer"}}>{q}</button>
+          <button key={q} onClick={()=>setInp(q)} style={{fontSize:10,padding:"3px 9px",borderRadius:20,border:`1px solid ${G2}`,background:G0,color:G7,cursor:"pointer"}}>{q}</button>
         ))}
       </div>
-      <div style={{padding:"10px 16px",borderTop:`1.5px solid ${G1}`,display:"flex",gap:8}}>
-        <input value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()}
-          placeholder="Ask anything…" style={{...iS,flex:1}}/>
-        <button onClick={send} disabled={load||!inp.trim()}
-          style={{padding:"8px 16px",background:R,border:"none",borderRadius:9,color:W,
-            fontSize:13,fontWeight:700,cursor:"pointer",opacity:load||!inp.trim()?0.5:1}}>
-          Send
-        </button>
+      <div style={{padding:"10px 14px",borderTop:`1px solid ${G1}`,display:"flex",gap:8}}>
+        <input value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()} placeholder="Ask anything…" style={{...iS,flex:1}}/>
+        <button onClick={send} disabled={load||!inp.trim()} style={{padding:"8px 14px",background:R,border:"none",borderRadius:9,color:W,fontSize:13,fontWeight:700,cursor:"pointer",opacity:load||!inp.trim()?0.5:1}}>Send</button>
       </div>
     </div>
   );
 }
 
-// ── CALENDAR VIEW ─────────────────────────────────────────────────────
+// ── CALENDAR ───────────────────────────────────────────────────────
 function CalView({clients}){
-  const [wk,setWk] = useState(0);
-  const [selectedDay, setSelectedDay] = useState(null);
-  const today = useMemo(()=>{const d=new Date();d.setHours(0,0,0,0);return d;},[]);
+  const [wk,setWk]=useState(0);
+  const [sel,setSel]=useState(null);
+  const today=useMemo(()=>{const d=new Date();d.setHours(0,0,0,0);return d;},[]);
+  const wkStart=useMemo(()=>{const d=new Date();d.setHours(0,0,0,0);const day=d.getDay();d.setDate(d.getDate()-(day===0?6:day-1)+wk*7);return d;},[wk]);
+  const days=Array.from({length:7},(_,i)=>addDays(wkStart,i));
 
-  const wkStart = useMemo(()=>{
-    const d=new Date();d.setHours(0,0,0,0);
-    const day=d.getDay();
-    d.setDate(d.getDate()-(day===0?6:day-1)+wk*7);
-    return d;
-  },[wk]);
-
-  const days = Array.from({length:7},(_,i)=>addDays(wkStart,i));
-
-  const byDay = useMemo(()=>{
-    const m={};
-    days.forEach(d=>{m[d.toDateString()]=[];});
+  const byDay=useMemo(()=>{
+    const m={};days.forEach(d=>{m[d.toDateString()]=[];});
     clients.forEach(c=>{
       buildStages(c).forEach(s=>{
         days.forEach(d=>{
@@ -632,100 +630,88 @@ function CalView({clients}){
     return m;
   },[clients,wkStart]);
 
-  const btnS = {padding:"7px 14px",background:W,border:`1.5px solid ${G3}`,borderRadius:8,fontSize:12,color:G7,cursor:"pointer"};
-
-  // Sunday fun message
-  function getDayContent(d) {
-    const isSun = d.getDay() === 0;
-    const tasks = byDay[d.toDateString()]||[];
-    return {isSun, tasks};
-  }
-
-  const selectedTasks = selectedDay ? (byDay[selectedDay.toDateString()]||[]) : (byDay[today.toDateString()]||[]);
-  const selectedIsSun = selectedDay ? selectedDay.getDay()===0 : today.getDay()===0;
-  const displayDate = selectedDay || today;
+  const btnS={padding:"7px 12px",background:W,border:`1px solid ${G2}`,borderRadius:8,fontSize:12,color:G7,cursor:"pointer"};
+  const selTasks=sel?(byDay[sel.toDateString()]||[]):(byDay[today.toDateString()]||[]);
+  const selIsSun=sel?sel.getDay()===0:today.getDay()===0;
+  const dispDate=sel||today;
 
   return (
     <div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
         <button onClick={()=>setWk(w=>w-1)} style={btnS}>← Prev</button>
-        <span style={{fontSize:14,fontWeight:700,color:BK,textAlign:"center"}}>
-          {fmtDateFull(wkStart)} — {fmtDateFull(days[6])}
-          {wk===0&&<span style={{fontSize:11,marginLeft:8,color:R,fontWeight:600}}> This week</span>}
+        <span style={{fontSize:13,fontWeight:700,color:BK,textAlign:"center"}}>
+          {fmtFull(wkStart)} - {fmtFull(days[6])}
+          {wk===0&&<span style={{fontSize:11,marginLeft:6,color:R,fontWeight:600}}>This week</span>}
         </span>
         <button onClick={()=>setWk(w=>w+1)} style={btnS}>Next →</button>
       </div>
-      {wk!==0&&<button onClick={()=>{setWk(0);setSelectedDay(null);}} style={{...btnS,marginBottom:12,fontSize:11}}>↩ Today</button>}
+      {wk!==0&&<button onClick={()=>{setWk(0);setSel(null);}} style={{...btnS,marginBottom:12,fontSize:11}}>Today</button>}
 
-      {/* 7-day grid */}
-      <div className="cal-grid" style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:8}}>
+      {/* 7-day grid - all days always visible */}
+      <div className="cal-grid" style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6,marginBottom:12}}>
         {days.map(d=>{
           const isT=d.toDateString()===today.toDateString();
-          const isSel=selectedDay&&d.toDateString()===selectedDay.toDateString();
-          const {isSun,tasks}=getDayContent(d);
+          const isSel=sel&&d.toDateString()===sel.toDateString();
+          const isSun=d.getDay()===0;
+          const tasks=byDay[d.toDateString()]||[];
           return (
-            <div key={d.toDateString()}
-              onClick={()=>setSelectedDay(prev=>prev&&prev.toDateString()===d.toDateString()?null:new Date(d))}
-              style={{
-                background:isSel?"#FFF0F0":isT?RL:W,
-                border:`1.5px solid ${isSel?R:isT?RM:G1}`,
-                borderRadius:12,padding:"10px 8px",minHeight:110,
-                cursor:"pointer",transition:"all 0.15s",
-                boxShadow:isSel?`0 2px 12px ${R}33`:"none",
-              }}>
-              <div style={{marginBottom:7}}>
-                <div style={{fontSize:10,color:isSel?R:isT?R:G5,fontWeight:700,textTransform:"uppercase"}}>{d.toLocaleDateString("en-GB",{weekday:"short"})}</div>
-                <div style={{fontSize:18,fontWeight:800,color:isSel?R:isT?R:BK}}>{d.getDate()}</div>
+            <div key={d.toDateString()} className="cal-day"
+              onClick={()=>setSel(p=>p&&p.toDateString()===d.toDateString()?null:new Date(d))}
+              style={{background:isSel?RL:isT?"#FFF5F5":W,border:`1px solid ${isSel?R:isT?RM:G1}`,
+                borderRadius:10,padding:"8px 6px",minHeight:90,cursor:"pointer",
+                transition:"all 0.15s",boxShadow:isSel?`0 2px 8px ${R}22`:"none"}}>
+              <div style={{marginBottom:5}}>
+                <div style={{fontSize:9,color:isSel?R:isT?R:G4,fontWeight:700,textTransform:"uppercase",letterSpacing:0.3}}>
+                  {d.toLocaleDateString("en-GB",{weekday:"short"})}
+                </div>
+                <div className="cal-daynum" style={{fontSize:16,fontWeight:800,color:isSel?R:isT?R:isSun?G3:BK,lineHeight:1.1}}>{d.getDate()}</div>
               </div>
-              {isSun
-                ? <div style={{fontSize:9,color:G3,fontStyle:"italic",lineHeight:1.4}}>🌙 Rest day</div>
-                : tasks.length===0
-                  ? <div style={{fontSize:9,color:G3}}>—</div>
-                  : <div style={{display:"flex",flexDirection:"column",gap:3}}>
-                      {tasks.slice(0,4).map((t,i)=>(
-                        <div key={i} style={{fontSize:9,padding:"3px 5px",borderRadius:5,lineHeight:1.3,
-                          background:t.done?GB:t.status==="overdue"?RL:`${t.color}15`,
-                          border:`1px solid ${t.done?"#BBF7D0":t.status==="overdue"?RM:`${t.color}44`}`,
-                          color:t.done?GR:t.status==="overdue"?RD:G7}}>
-                          <div style={{fontWeight:700,color:t.color,fontSize:8}}>{t.client.split(" ")[0]}</div>
-                          {t.stage}
-                        </div>
-                      ))}
-                      {tasks.length>4&&<div style={{fontSize:9,color:G5,fontWeight:600}}>+{tasks.length-4} more</div>}
+              {isSun?<div style={{fontSize:8,color:G3,fontStyle:"italic"}}>🌙 Rest</div>
+                :tasks.length===0?<div style={{fontSize:8,color:G2}}>-</div>
+                :<div style={{display:"flex",flexDirection:"column",gap:2}}>
+                  {tasks.slice(0,3).map((t,i)=>(
+                    <div key={i} className="cal-event" style={{fontSize:9,padding:"2px 4px",borderRadius:4,lineHeight:1.25,
+                      background:t.done?GB:t.status==="overdue"?RL:`${t.color}14`,
+                      border:`1px solid ${t.done?"#BBF7D0":t.status==="overdue"?RM:`${t.color}33`}`,
+                      color:t.done?GR:t.status==="overdue"?RD:G7,overflow:"hidden"}}>
+                      <div style={{fontWeight:700,color:t.color,fontSize:8,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t.client.split(" ")[0]}</div>
+                      <div style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t.stage}</div>
                     </div>
+                  ))}
+                  {tasks.length>3&&<div style={{fontSize:8,color:G4,fontWeight:600}}>+{tasks.length-3}</div>}
+                </div>
               }
             </div>
           );
         })}
       </div>
 
-      {/* Expanded day view */}
-      <div style={{marginTop:16,padding:"16px 20px",background:W,borderRadius:12,border:`1.5px solid ${selectedDay?RM:G1}`,
-        boxShadow:selectedDay?`0 2px 12px ${R}22`:"none",transition:"all 0.2s"}}>
-        <div style={{fontSize:13,fontWeight:700,color:BK,marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
-          📋 {selectedDay?"Selected: ":"Today — "}{fmtDateFull(displayDate)}
-          {selectedDay&&<button onClick={()=>setSelectedDay(null)} style={{fontSize:10,padding:"2px 8px",borderRadius:20,border:`1px solid ${G3}`,background:G0,color:G5,cursor:"pointer",marginLeft:"auto"}}>Clear</button>}
+      {/* Expanded day panel */}
+      <div style={{padding:"14px 18px",background:W,borderRadius:12,border:`1px solid ${sel?RM:G1}`,transition:"border-color 0.2s"}}>
+        <div style={{fontSize:13,fontWeight:700,color:BK,marginBottom:10,display:"flex",alignItems:"center",gap:8}}>
+          {sel?"Selected day":"Today"} - {fmtFull(dispDate)}
+          {sel&&<button onClick={()=>setSel(null)} style={{fontSize:10,padding:"2px 8px",borderRadius:20,border:`1px solid ${G2}`,background:G0,color:G5,cursor:"pointer",marginLeft:"auto"}}>Clear</button>}
         </div>
-        {selectedIsSun
-          ? <div style={{textAlign:"center",padding:"20px",color:G5}}>
-              <div style={{fontSize:28,marginBottom:8}}>🌙</div>
-              <div style={{fontSize:14,fontWeight:600,color:G7}}>Sunday — Rest Day</div>
-              <div style={{fontSize:12,color:G3,marginTop:4}}>No work scheduled. Recharge! ✨</div>
+        {selIsSun
+          ?<div style={{textAlign:"center",padding:"18px",color:G5}}>
+              <div style={{fontSize:26,marginBottom:6}}>🌙</div>
+              <div style={{fontSize:13,fontWeight:600,color:G7}}>Sunday Rest Day</div>
+              <div style={{fontSize:12,color:G4,marginTop:3}}>No work scheduled. Recharge! ✨</div>
             </div>
-          : selectedTasks.length===0
-            ? <div style={{fontSize:12,color:G3,textAlign:"center",padding:"12px"}}>Nothing scheduled for this day 🎉</div>
-            : <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                {selectedTasks.map((t,i)=>(
-                  <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",
+          :selTasks.length===0
+            ?<div style={{fontSize:12,color:G4,textAlign:"center",padding:"10px"}}>Nothing scheduled 🎉</div>
+            :<div style={{display:"flex",flexDirection:"column",gap:5}}>
+                {selTasks.map((t,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:9,padding:"8px 11px",
                     background:t.status==="overdue"?RL:t.done?GB:G0,
-                    borderRadius:8,border:`1.5px solid ${t.status==="overdue"?RM:t.done?"#BBF7D0":G1}`}}>
-                    <span style={{width:8,height:8,borderRadius:"50%",background:t.color,flexShrink:0,display:"inline-block"}}/>
+                    borderRadius:8,border:`1px solid ${t.status==="overdue"?RM:t.done?"#BBF7D0":G1}`}}>
+                    <span style={{width:7,height:7,borderRadius:"50%",background:t.color,flexShrink:0,display:"inline-block"}}/>
                     <span style={{fontSize:13,fontWeight:600,color:BK,flex:1}}>{t.client}</span>
                     <span style={{fontSize:12,color:G5}}>{t.stage}</span>
-                    <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,fontWeight:500,
+                    <span style={{fontSize:10,padding:"2px 7px",borderRadius:20,fontWeight:500,
                       background:t.status==="overdue"?RL:t.done?GB:G1,
                       color:t.status==="overdue"?RD:t.done?GR:G5}}>
-                      {t.done?"✓ Done":t.status}
+                      {t.done?"Done":t.status}
                     </span>
                   </div>
                 ))}
@@ -736,454 +722,274 @@ function CalView({clients}){
   );
 }
 
-
-// ── DELAY REPORT ──────────────────────────────────────────────────────
+// ── DELAY REPORT ───────────────────────────────────────────────────
 function Report({clients,onClose}){
-  const today = new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-  const delayed = clients.filter(c=>elapsed(c.startDate)>(c.dur||30));
-  const overStages = clients.flatMap(c=>
-    buildStages(c).filter(s=>s.status==="overdue")
-      .map(s=>({client:c.name,stage:s.label,daysOver:Math.floor((new Date()-s.end)/86400000)}))
-  ).sort((a,b)=>b.daysOver-a.daysOver);
-  const onTrack = Math.max(0,clients.length-delayed.length-clients.filter(c=>buildStages(c).some(s=>s.status==="overdue")).length);
-
-  function buildTxt(){
-    let b=`FZK Media — Cycle Tracker Report\n${today}\n\n`;
-    if(delayed.length){b+=`⚠ DELAYED (${delayed.length})\n${"-".repeat(40)}\n`;delayed.forEach(c=>{const e=elapsed(c.startDate);b+=`• ${c.name} — ${e} days (+${e-(c.dur||30)}d)\n`;});b+="\n";}
-    if(overStages.length){b+=`🔴 OVERDUE STAGES (${overStages.length})\n${"-".repeat(40)}\n`;overStages.forEach(s=>{b+=`• ${s.client} — ${s.stage} (${s.daysOver}d overdue)\n`;});b+="\n";}
-    if(!delayed.length&&!overStages.length)b+="✅ All clients on track!\n";
-    b+=`\n— FZK Media Cycle Tracker`;
-    return b;
-  }
-
+  const today=new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  const delayed=clients.filter(c=>elapsed(c.startDate)>(c.dur||30));
+  const overStages=clients.flatMap(c=>buildStages(c).filter(s=>s.status==="overdue").map(s=>({client:c.name,stage:s.label,daysOver:Math.floor((new Date()-s.end)/86400000)}))).sort((a,b)=>b.daysOver-a.daysOver);
+  const onTrack=Math.max(0,clients.length-delayed.length-clients.filter(c=>buildStages(c).some(s=>s.status==="overdue")).length);
+  function buildTxt(){let b=`FZK Media - Cycle Tracker Report\n${today}\n\n`;if(delayed.length){b+=`Delayed Cycles (${delayed.length})\n${"-".repeat(36)}\n`;delayed.forEach(c=>{const e=elapsed(c.startDate);b+=`${c.name}: ${e} days (${e-(c.dur||30)}d over)\n`;});b+="\n";}if(overStages.length){b+=`Overdue Stages (${overStages.length})\n${"-".repeat(36)}\n`;overStages.forEach(s=>{b+=`${s.client} / ${s.stage}: ${s.daysOver}d overdue\n`;});b+="\n";}if(!delayed.length&&!overStages.length)b+="All clients on track!\n";b+=`\nFZK Media Cycle Tracker`;return b;}
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:1100,
-      display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-      <div style={{background:W,borderRadius:20,padding:28,width:"100%",maxWidth:520,
-        maxHeight:"85vh",overflowY:"auto",boxShadow:"0 16px 48px rgba(0,0,0,0.2)"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-          <div>
-            <div style={{fontSize:16,fontWeight:800,color:BK}}>📧 Delay Report</div>
-            <div style={{fontSize:11,color:G5,marginTop:2}}>{today}</div>
-          </div>
-          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:G5}}>✕</button>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.35)",zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:W,borderRadius:18,padding:26,width:"100%",maxWidth:500,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 12px 40px rgba(0,0,0,0.18)"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
+          <div><div style={{fontSize:15,fontWeight:800,color:BK}}>Delay Report</div><div style={{fontSize:11,color:G5,marginTop:1}}>{today}</div></div>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:G4}}>✕</button>
         </div>
-        <div style={{display:"flex",gap:10,marginBottom:20}}>
-          {[{l:"Delayed",v:delayed.length,c:delayed.length?RD:G5,bg:delayed.length?RL:G0},
-            {l:"Overdue Stages",v:overStages.length,c:overStages.length?OR:G5,bg:overStages.length?OB:G0},
-            {l:"On Track",v:onTrack,c:GR,bg:GB}].map(s=>(
-            <div key={s.l} style={{flex:1,background:s.bg,borderRadius:10,padding:"10px 14px",textAlign:"center"}}>
-              <div style={{fontSize:22,fontWeight:800,color:s.c}}>{s.v}</div>
-              <div style={{fontSize:10,color:G5,marginTop:2}}>{s.l}</div>
+        <div style={{display:"flex",gap:10,marginBottom:18}}>
+          {[{l:"Delayed",v:delayed.length,c:delayed.length?RD:G4,bg:delayed.length?RL:G0},{l:"Overdue Stages",v:overStages.length,c:overStages.length?OR:G4,bg:overStages.length?OB:G0},{l:"On Track",v:onTrack,c:GR,bg:GB}].map(s=>(
+            <div key={s.l} style={{flex:1,background:s.bg,borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
+              <div style={{fontSize:20,fontWeight:800,color:s.c}}>{s.v}</div>
+              <div style={{fontSize:10,color:G5,marginTop:1}}>{s.l}</div>
             </div>
           ))}
         </div>
-        {delayed.length>0&&(
-          <div style={{marginBottom:14}}>
-            <div style={{fontSize:12,fontWeight:700,color:RD,marginBottom:8}}>⚠ Delayed</div>
-            {delayed.map(c=>{const e=elapsed(c.startDate);return(
-              <div key={c.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-                padding:"9px 13px",background:RL,border:`1.5px solid ${RM}`,borderRadius:9,marginBottom:5}}>
-                <span style={{fontSize:13,fontWeight:600,color:BK}}>{c.name}</span>
-                <span style={{fontSize:11,color:RD,fontWeight:500}}>{e}d · +{e-(c.dur||30)}d over</span>
-              </div>
-            );})}
-          </div>
-        )}
-        {overStages.length>0&&(
-          <div style={{marginBottom:18}}>
-            <div style={{fontSize:12,fontWeight:700,color:OR,marginBottom:8}}>🔴 Overdue Stages</div>
-            {overStages.map((s,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-                padding:"9px 13px",background:OB,border:"1.5px solid #FDE68A",borderRadius:9,marginBottom:5}}>
-                <div>
-                  <span style={{fontSize:13,fontWeight:600,color:BK}}>{s.client}</span>
-                  <span style={{fontSize:12,color:G5,marginLeft:8}}>→ {s.stage}</span>
-                </div>
-                <span style={{fontSize:11,color:OR,fontWeight:500}}>{s.daysOver}d overdue</span>
-              </div>
-            ))}
-          </div>
-        )}
-        {!delayed.length&&!overStages.length&&(
-          <div style={{textAlign:"center",padding:"20px",background:GB,border:"1.5px solid #BBF7D0",borderRadius:12,marginBottom:18}}>
-            <div style={{fontSize:28,marginBottom:6}}>✅</div>
-            <div style={{fontSize:14,fontWeight:700,color:GR}}>All clients on track!</div>
-          </div>
-        )}
-        <pre style={{background:G0,border:`1.5px solid ${G1}`,borderRadius:10,padding:"14px 16px",
-          fontSize:11,color:G7,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"monospace",
-          maxHeight:150,overflowY:"auto",marginBottom:16}}>{buildTxt()}</pre>
+        {delayed.length>0&&<div style={{marginBottom:12}}><div style={{fontSize:12,fontWeight:700,color:RD,marginBottom:7}}>Delayed</div>{delayed.map(c=>{const e=elapsed(c.startDate);return(<div key={c.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",background:RL,border:`1px solid ${RM}`,borderRadius:9,marginBottom:4}}><span style={{fontSize:13,fontWeight:600,color:BK}}>{c.name}</span><span style={{fontSize:11,color:RD,fontWeight:500}}>{e}d (+{e-(c.dur||30)}d)</span></div>);})}</div>}
+        {overStages.length>0&&<div style={{marginBottom:16}}><div style={{fontSize:12,fontWeight:700,color:OR,marginBottom:7}}>Overdue Stages</div>{overStages.map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",background:OB,border:"1px solid #FDE68A",borderRadius:9,marginBottom:4}}><div><span style={{fontSize:13,fontWeight:600,color:BK}}>{s.client}</span><span style={{fontSize:12,color:G5,marginLeft:7}}>{s.stage}</span></div><span style={{fontSize:11,color:OR,fontWeight:500}}>{s.daysOver}d</span></div>)}</div>}
+        {!delayed.length&&!overStages.length&&<div style={{textAlign:"center",padding:"18px",background:GB,border:"1px solid #BBF7D0",borderRadius:12,marginBottom:16}}><div style={{fontSize:24,marginBottom:6}}>✅</div><div style={{fontSize:13,fontWeight:700,color:GR}}>All clients on track!</div></div>}
+        <pre style={{background:G0,border:`1px solid ${G1}`,borderRadius:10,padding:"12px 14px",fontSize:11,color:G7,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"monospace",maxHeight:130,overflowY:"auto",marginBottom:14}}>{buildTxt()}</pre>
         <div style={{display:"flex",gap:10}}>
-          <button onClick={()=>navigator.clipboard.writeText(buildTxt()).then(()=>alert("Copied!"))}
-            style={{flex:1,padding:"11px",background:G0,border:`1.5px solid ${G3}`,borderRadius:10,
-              cursor:"pointer",fontSize:13,color:G7,fontWeight:600}}>📋 Copy</button>
-          <button onClick={()=>window.open(`mailto:${EMAILS}?subject=${encodeURIComponent("FZK Media — Report · "+today)}&body=${encodeURIComponent(buildTxt())}`)}
-            style={{flex:2,padding:"11px",background:R,border:"none",borderRadius:10,cursor:"pointer",
-              fontSize:13,color:W,fontWeight:700,boxShadow:`0 2px 8px ${R}44`}}>📧 Send to Team</button>
+          <button onClick={()=>navigator.clipboard.writeText(buildTxt()).then(()=>alert("Copied!"))} style={{flex:1,padding:"10px",background:G0,border:`1px solid ${G2}`,borderRadius:10,cursor:"pointer",fontSize:13,color:G7,fontWeight:600}}>Copy</button>
+          <button onClick={()=>window.open(`mailto:${EMAILS}?subject=${encodeURIComponent("FZK Media Report")}&body=${encodeURIComponent(buildTxt())}`)} style={{flex:2,padding:"10px",background:R,border:"none",borderRadius:10,cursor:"pointer",fontSize:13,color:W,fontWeight:700}}>Send to Team</button>
         </div>
-        <div style={{marginTop:10,fontSize:11,color:G3,textAlign:"center"}}>Sends to all 7 FZK Media team members</div>
       </div>
     </div>
   );
 }
 
-// ── GROUP MANAGER ─────────────────────────────────────────────────────
+// ── GROUP MANAGER ──────────────────────────────────────────────────
 function GrpMgr({groups,onUpdate,onClose}){
   const [ng,setNg]=useState("");
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.3)",zIndex:900,
-      display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <div style={{background:W,borderRadius:16,padding:28,width:360,boxShadow:"0 8px 32px rgba(0,0,0,0.15)"}}>
-        <div style={{fontSize:16,fontWeight:800,color:BK,marginBottom:4}}>Manage Groups</div>
-        <div style={{fontSize:12,color:G5,marginBottom:20}}>Drag clients between groups</div>
-        <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:16}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.25)",zIndex:900,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{background:W,borderRadius:16,padding:26,width:340,boxShadow:"0 8px 32px rgba(0,0,0,0.12)"}}>
+        <div style={{fontSize:15,fontWeight:800,color:BK,marginBottom:3}}>Groups</div>
+        <div style={{fontSize:12,color:G5,marginBottom:18}}>Drag clients between groups</div>
+        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:14}}>
           {groups.map(g=>(
-            <div key={g} style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-              padding:"9px 13px",background:G0,borderRadius:9,border:`1.5px solid ${G1}`}}>
+            <div key={g} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 12px",background:G0,borderRadius:9,border:`1px solid ${G1}`}}>
               <span style={{fontSize:13,fontWeight:500,color:BK}}>{({"Onboarding":"🌱","Active":"⚡","Getting Started":"🚀","OG Client":"⭐","To Start":"📋"})[g]||"●"} {g}</span>
-              <button onClick={()=>{if(groups.length>1)onUpdate(groups.filter(x=>x!==g));}}
-                style={{background:"none",border:"none",cursor:"pointer",color:RM,fontSize:16}}>✕</button>
+              <button onClick={()=>{if(groups.length>1)onUpdate(groups.filter(x=>x!==g));}} style={{background:"none",border:"none",cursor:"pointer",color:G3,fontSize:16}}>✕</button>
             </div>
           ))}
         </div>
         <div style={{display:"flex",gap:8}}>
-          <input value={ng} onChange={e=>setNg(e.target.value)} placeholder="New group name…"
-            onKeyDown={e=>{if(e.key==="Enter"&&ng.trim()){onUpdate([...groups,ng.trim()]);setNg("");}}}
-            style={{...iS,flex:1}}/>
-          <button onClick={()=>{if(ng.trim()){onUpdate([...groups,ng.trim()]);setNg("");}}}
-            style={{padding:"7px 14px",background:R,border:"none",borderRadius:8,color:W,
-              fontSize:13,fontWeight:700,cursor:"pointer"}}>Add</button>
+          <input value={ng} onChange={e=>setNg(e.target.value)} placeholder="New group…" onKeyDown={e=>{if(e.key==="Enter"&&ng.trim()){onUpdate([...groups,ng.trim()]);setNg("");}}} style={{...iS,flex:1}}/>
+          <button onClick={()=>{if(ng.trim()){onUpdate([...groups,ng.trim()]);setNg("");}}} style={{padding:"7px 14px",background:R,border:"none",borderRadius:8,color:W,fontSize:13,fontWeight:700,cursor:"pointer"}}>Add</button>
         </div>
-        <button onClick={onClose} style={{width:"100%",marginTop:16,padding:"10px",background:G0,
-          border:`1.5px solid ${G3}`,borderRadius:9,cursor:"pointer",fontSize:13,color:G7,fontWeight:500}}>Done</button>
+        <button onClick={onClose} style={{width:"100%",marginTop:14,padding:"10px",background:G0,border:`1px solid ${G2}`,borderRadius:9,cursor:"pointer",fontSize:13,color:G7,fontWeight:500}}>Done</button>
       </div>
     </div>
   );
 }
 
-// ── PASSWORD SCREEN ───────────────────────────────────────────────────
+// ── PASSWORD SCREEN ────────────────────────────────────────────────
 function PwScreen({onUnlock}){
-  const [step,setStep] = useState("pw");
-  const [pw,setPw]     = useState("");
-  const [ak,setAk]     = useState("");
-  const [err,setErr]   = useState("");
-
-  function tryPw(){
-    if(pw.trim()===PW){
-      if(!localStorage.getItem("fzk_ak")) setStep("key");
-      else onUnlock();
-    } else {
-      setErr("Wrong password — try again");
-      setTimeout(()=>setErr(""),2000);
-      setPw("");
-    }
-  }
-  function saveKey(){
-    const k=ak.trim();
-    if(k.startsWith("sk-ant-")){localStorage.setItem("fzk_ak",k);onUnlock();}
-    else{setErr("Must start with sk-ant-");setTimeout(()=>setErr(""),2000);}
-  }
-
+  const [step,setStep]=useState("pw");
+  const [pw,setPw]=useState("");
+  const [ak,setAk]=useState("");
+  const [err,setErr]=useState("");
+  function tryPw(){if(pw.trim()===PW){if(!localStorage.getItem("fzk_ak"))setStep("key");else onUnlock();}else{setErr("Wrong password, try again");setTimeout(()=>setErr(""),2000);setPw("");}}
+  function saveKey(){const k=ak.trim();if(k.startsWith("sk-ant-")){localStorage.setItem("fzk_ak",k);onUnlock();}else{setErr("Must start with sk-ant-");setTimeout(()=>setErr(""),2000);}}
   const wrap={minHeight:"100vh",background:R,display:"flex",alignItems:"center",justifyContent:"center",padding:16};
-  const box={background:W,borderRadius:24,padding:"40px 32px",width:"100%",maxWidth:380,textAlign:"center",boxShadow:"0 24px 64px rgba(0,0,0,0.28)"};
-
+  const box={background:W,borderRadius:20,padding:"36px 28px",width:"100%",maxWidth:360,textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.22)"};
   if(step==="key") return (
-    <div style={wrap}>
-      <div style={box}>
-        <div style={{fontSize:10,background:R,color:W,borderRadius:99,padding:"3px 14px",
-          display:"inline-block",fontWeight:700,marginBottom:16,letterSpacing:1}}>ONE-TIME SETUP</div>
-        <div style={{fontSize:28,fontWeight:900,color:R,letterSpacing:-1,marginBottom:4}}>FZK Media</div>
-        <div style={{fontSize:13,color:G5,marginBottom:20}}>Enter your Anthropic API key for AI Chat</div>
-        <div style={{fontSize:12,color:G7,background:G0,padding:"12px 14px",borderRadius:12,
-          textAlign:"left",marginBottom:20,lineHeight:1.7}}>
-          Stored <strong>only on this device</strong> — never in code or GitHub.<br/>
-          Get it at: <strong style={{color:R}}>console.anthropic.com</strong>
-        </div>
-        <input value={ak} onChange={e=>setAk(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveKey()}
-          placeholder="sk-ant-api03-..." autoFocus
-          style={{...iS,width:"100%",padding:"11px 14px",fontSize:13,
-            border:`2px solid ${err?R:G3}`,marginBottom:8}}/>
-        {err&&<div style={{fontSize:12,color:R,marginBottom:8,fontWeight:600}}>{err}</div>}
-        <button onClick={saveKey} style={{width:"100%",padding:"13px",background:R,border:"none",
-          borderRadius:12,color:W,fontSize:14,fontWeight:800,marginBottom:10,cursor:"pointer",
-          boxShadow:`0 4px 20px ${R}55`}}>
-          Save & Open Tracker →
-        </button>
-        <button onClick={onUnlock} style={{width:"100%",padding:"10px",background:"none",
-          border:`1.5px solid ${G3}`,borderRadius:10,color:G5,fontSize:12,cursor:"pointer"}}>
-          Skip — use without AI
-        </button>
-      </div>
-    </div>
+    <div style={wrap}><div style={box}>
+      <div style={{fontSize:11,background:R,color:W,borderRadius:99,padding:"3px 12px",display:"inline-block",fontWeight:700,marginBottom:14,letterSpacing:1}}>ONE-TIME SETUP</div>
+      <div style={{fontSize:26,fontWeight:900,color:R,letterSpacing:-0.5,marginBottom:4}}>FZK Media</div>
+      <div style={{fontSize:12,color:G5,marginBottom:18}}>Enter your Anthropic API key for AI Chat</div>
+      <div style={{fontSize:11,color:G7,background:G0,padding:"10px 13px",borderRadius:10,textAlign:"left",marginBottom:18,lineHeight:1.65}}>Stored only on this device, never in code.<br/>Get yours at <strong style={{color:R}}>console.anthropic.com</strong></div>
+      <input value={ak} onChange={e=>setAk(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveKey()} placeholder="sk-ant-api03-..." autoFocus style={{...iS,width:"100%",padding:"10px 13px",fontSize:13,border:`2px solid ${err?R:G2}`,marginBottom:8}}/>
+      {err&&<div style={{fontSize:12,color:R,marginBottom:8,fontWeight:600}}>{err}</div>}
+      <button onClick={saveKey} style={{width:"100%",padding:"12px",background:R,border:"none",borderRadius:11,color:W,fontSize:14,fontWeight:800,marginBottom:9,cursor:"pointer"}}>Save and open tracker</button>
+      <button onClick={onUnlock} style={{width:"100%",padding:"9px",background:"none",border:`1px solid ${G2}`,borderRadius:10,color:G5,fontSize:12,cursor:"pointer"}}>Skip, use without AI</button>
+    </div></div>
   );
-
   return (
-    <div style={wrap}>
-      <div style={box}>
-        <div style={{fontSize:32,fontWeight:900,color:R,letterSpacing:-1,marginBottom:2}}>FZK Media</div>
-        <div style={{fontSize:16,fontWeight:700,color:G7,marginBottom:6}}>Media · Cycle Tracker</div>
-        <div style={{fontSize:11,color:G3,marginBottom:28}}>Internal Team Tool</div>
-        <input type="password" value={pw} onChange={e=>setPw(e.target.value)}
-          onKeyDown={e=>e.key==="Enter"&&tryPw()} placeholder="Team password" autoFocus
-          style={{...iS,width:"100%",padding:"13px 16px",fontSize:15,textAlign:"center",
-            border:`2px solid ${err?R:G3}`,marginBottom:10,letterSpacing:2}}/>
-        {err&&<div style={{fontSize:12,color:R,marginBottom:10,fontWeight:600}}>{err}</div>}
-        <button onClick={tryPw} style={{width:"100%",padding:"13px",background:R,border:"none",
-          borderRadius:12,color:W,fontSize:15,fontWeight:800,cursor:"pointer",
-          boxShadow:`0 4px 20px ${R}55`}}>
-          Enter →
-        </button>
-      </div>
-    </div>
+    <div style={wrap}><div style={box}>
+      <div style={{fontSize:30,fontWeight:900,color:R,letterSpacing:-1,marginBottom:3}}>FZK Media</div>
+      <div style={{fontSize:14,fontWeight:600,color:G5,marginBottom:24}}>Cycle Tracker</div>
+      <input type="password" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&tryPw()} placeholder="Team password" autoFocus style={{...iS,width:"100%",padding:"12px 15px",fontSize:15,textAlign:"center",border:`2px solid ${err?R:G2}`,marginBottom:9,letterSpacing:2}}/>
+      {err&&<div style={{fontSize:12,color:R,marginBottom:9,fontWeight:600}}>{err}</div>}
+      <button onClick={tryPw} style={{width:"100%",padding:"12px",background:R,border:"none",borderRadius:11,color:W,fontSize:15,fontWeight:800,cursor:"pointer"}}>Enter</button>
+    </div></div>
   );
 }
 
-// ── APP ───────────────────────────────────────────────────────────────
+// ── APP ────────────────────────────────────────────────────────────
 function App(){
-  const [clients,  setClients]  = useState(null);
-  const [groups,   setGroups]   = useState(DEF_GROUPS);
-  const [nextId,   setNextId]   = useState(100);
-  const [sync,     setSync]     = useState("loading"); // loading|saving|synced|error
-  const [lastSave, setLastSave] = useState(null);
-  const [view,     setView]     = useState("tracker");
-  const [filter,   setFilter]   = useState("all");
-  const [search,   setSearch]   = useState("");
-  const [showAI,   setShowAI]   = useState(false);
-  const [showGrp,  setShowGrp]  = useState(false);
-  const [showRpt,  setShowRpt]  = useState(false);
-  const [dragId,   setDragId]   = useState(null);
-  const [dragOver, setDragOver] = useState(null);
+  const [clients,setClients]=useState(null);
+  const [groups,setGroups]=useState(DEF_GROUPS);
+  const [nextId,setNextId]=useState(100);
+  const [sync,setSync]=useState("loading");
+  const [lastSave,setLastSave]=useState(null);
+  const [view,setView]=useState("tracker");
+  const [filter,setFilter]=useState("all");
+  const [search,setSearch]=useState("");
+  const [showAI,setShowAI]=useState(false);
+  const [showGrp,setShowGrp]=useState(false);
+  const [showRpt,setShowRpt]=useState(false);
+  const [dragId,setDragId]=useState(null);
+  const [dragOver,setDragOver]=useState(null);
+  const saveRef=useRef(null);
+  const lastTsRef=useRef(null);
 
-  const saveRef    = useRef(null);
-  const lastTsRef  = useRef(null); // last timestamp we saved or received
-
-  // Load from Supabase
   useEffect(()=>{
     async function load(){
       try{
-        const d = await dbGet();
+        const d=await dbGet();
         if(d?.clients&&Array.isArray(d.clients)&&d.clients.length>0){
-          setClients(d.clients);
-          if(d.groups) setGroups(d.groups);
-          setNextId(Math.max(...d.clients.map(c=>c.id),99)+1);
-          lastTsRef.current = d._ts || d.updated_at || null;
-        } else {
+          // Migrate: add tasks:{} to any client missing it
+          const migrated=d.clients.map(c=>({...c,tasks:c.tasks||{}}));
+          setClients(migrated);
+          if(d.groups)setGroups(d.groups);
+          setNextId(Math.max(...migrated.map(c=>c.id),99)+1);
+          lastTsRef.current=d._ts||null;
+        }else{
           setClients(DEF_CLIENTS);
-          const ts = new Date().toISOString();
-          const initTs = await dbSet({clients:DEF_CLIENTS,groups:DEF_GROUPS});
-          lastTsRef.current = initTs;
+          const ts=await dbSet({clients:DEF_CLIENTS,groups:DEF_GROUPS});
+          lastTsRef.current=ts;
         }
         setSync("synced");
-      } catch(e){
-        console.error("Load error:",e);
-        setClients(DEF_CLIENTS);
-        setSync("error");
-      }
+      }catch(e){console.error(e);setClients(DEF_CLIENTS);setSync("error");}
     }
     load();
   },[]);
 
-  // Auto-save on change (debounced 1s)
   useEffect(()=>{
     if(!clients||sync==="loading") return;
-    if(saveRef.current) clearTimeout(saveRef.current);
+    if(saveRef.current)clearTimeout(saveRef.current);
     setSync("saving");
-    saveRef.current = setTimeout(async()=>{
-      try{
-        const ts = new Date().toISOString();
-        const savedTs = await dbSet({clients,groups});
-        lastTsRef.current = savedTs;
-        setLastSave(new Date());
-        setSync("synced");
-      } catch(e){
-        console.error("Save error:",e);
-        setSync("error");
-      } finally{
-        saveRef.current = null;
-      }
+    saveRef.current=setTimeout(async()=>{
+      try{const ts=await dbSet({clients,groups});lastTsRef.current=ts;setLastSave(new Date());setSync("synced");}
+      catch(e){console.error(e);setSync("error");}
+      finally{saveRef.current=null;}
     },1000);
   },[clients,groups]);
 
-  // Poll every 8s for changes from other devices
   useEffect(()=>{
-    if(!clients) return;
-    const poll = setInterval(async()=>{
-      if(saveRef.current) return; // skip while saving
+    const poll=setInterval(async()=>{
+      if(saveRef.current) return;
       try{
-        const d = await dbGet();
+        const d=await dbGet();
         if(!d?.clients) return;
-        const remoteTs = d._ts ? new Date(d._ts).getTime() : 0;
-        const localTs  = lastTsRef.current ? new Date(lastTsRef.current).getTime() : 0;
-        if(remoteTs > localTs + 1000){
-          // Remote is newer — update local state
-          lastTsRef.current = d._ts;
-          console.log("🔄 Pulling remote update from", d._ts);
-          setClients(prev=>{
-            if(JSON.stringify(prev)===JSON.stringify(d.clients)) return prev;
-            return d.clients;
-          });
-          if(d.groups) setGroups(g=>{
-            if(JSON.stringify(g)===JSON.stringify(d.groups)) return g;
-            return d.groups;
-          });
+        const remoteTs=d._ts?new Date(d._ts).getTime():0;
+        const localTs=lastTsRef.current?new Date(lastTsRef.current).getTime():0;
+        if(remoteTs>localTs+1000){
+          lastTsRef.current=d._ts;
+          setClients(p=>JSON.stringify(p)===JSON.stringify(d.clients)?p:d.clients.map(c=>({...c,tasks:c.tasks||{}})));
+          if(d.groups)setGroups(g=>JSON.stringify(g)===JSON.stringify(d.groups)?g:d.groups);
         }
-      } catch(e){ console.warn("Poll error:",e); }
+      }catch(e){console.warn(e);}
     },8000);
-    return ()=>clearInterval(poll);
-  },[]); // intentionally empty — poll runs independently
+    return()=>clearInterval(poll);
+  },[]);
 
-  const upd = useCallback((id,data)=>setClients(p=>p.map(c=>c.id===id?{...c,...data}:c)),[]);
-  const del = useCallback((id)=>setClients(p=>p.filter(c=>c.id!==id)),[]);
+  const upd=useCallback((id,data)=>setClients(p=>p.map(c=>c.id===id?{...c,...data}:c)),[]);
+  const del=useCallback((id)=>setClients(p=>p.filter(c=>c.id!==id)),[]);
 
   function addClient(){
-    const nc={id:nextId,name:"New Client",type:"cycle",phase:"C1",startDate:todayStr(),
-      dur:30,pieces:0,group:groups[1]||groups[0],checks:{},ov:{},pd:{},notes:""};
-    setClients(p=>[...p,nc]);
-    setNextId(n=>n+1);
+    const nc={id:nextId,name:"New Client",type:"cycle",phase:"C1",startDate:todayStr(),dur:30,pieces:0,group:groups[1]||groups[0],checks:{},ov:{},pd:{},notes:"",tasks:{}};
+    setClients(p=>[...p,nc]);setNextId(n=>n+1);
   }
-
-  function updateKey(){
-    const k=prompt("Paste your Anthropic API key (sk-ant-...):","");
-    if(k&&k.trim().startsWith("sk-ant-")){localStorage.setItem("fzk_ak",k.trim());alert("✅ Key saved!");}
-    else if(k){alert("Invalid — must start with sk-ant-");}
-  }
+  function updateKey(){const k=prompt("Paste Anthropic API key (sk-ant-...):","");if(k&&k.trim().startsWith("sk-ant-")){localStorage.setItem("fzk_ak",k.trim());alert("Key saved!");}else if(k){alert("Invalid key format");}}
 
   if(!clients) return (
-    <div style={{minHeight:"100vh",background:R,display:"flex",flexDirection:"column",
-      alignItems:"center",justifyContent:"center",gap:16}}>
-      <div style={{fontSize:32,fontWeight:900,color:W,letterSpacing:-1}}>FZK Media</div>
-      <div style={{width:28,height:28,border:`3px solid ${W}`,borderTopColor:"transparent",
-        borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
-      <div style={{fontSize:13,color:"rgba(255,255,255,0.7)"}}>Loading tracker…</div>
+    <div style={{minHeight:"100vh",background:R,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14}}>
+      <div style={{fontSize:28,fontWeight:900,color:W,letterSpacing:-0.5}}>FZK Media</div>
+      <div style={{width:24,height:24,border:`3px solid ${W}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
     </div>
   );
 
-  const today  = new Date();
-  const syncTxt = {saving:"Saving…",synced:"● Synced"+(lastSave?" "+lastSave.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):""),error:"⚠ Sync error",loading:""}[sync]||"";
-  const syncClr = {saving:"rgba(255,255,255,0.6)",synced:"rgba(255,255,255,0.85)",error:"#FFD580",loading:"rgba(255,255,255,0.4)"}[sync];
+  const today=new Date();
+  const syncTxt={saving:"Saving",synced:"Synced"+(lastSave?" "+lastSave.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):""),error:"Sync error",loading:""}[sync]||"";
+  const syncClr={saving:"rgba(255,255,255,0.5)",synced:"rgba(255,255,255,0.8)",error:"#FFD580",loading:"transparent"}[sync];
+  const totalOv=clients.reduce((a,c)=>a+buildStages(c).filter(s=>s.status==="overdue").length,0);
+  const totalDel=clients.filter(c=>elapsed(c.startDate)>(c.dur||30)).length;
+  const alerts=totalOv+totalDel;
 
-  const totalOv  = clients.reduce((a,c)=>a+buildStages(c).filter(s=>s.status==="overdue").length,0);
-  const totalDel = clients.filter(c=>elapsed(c.startDate)>(c.dur||30)).length;
-  const alerts   = totalOv+totalDel;
-
-  const filtered = clients.filter(c=>{
+  const filtered=clients.filter(c=>{
     if(search&&!c.name.toLowerCase().includes(search.toLowerCase())) return false;
     if(filter!=="all"&&c.group!==filter) return false;
     return true;
   });
-  const grouped = groups.map(g=>({g,items:filtered.filter(c=>c.group===g)})).filter(x=>x.items.length>0);
-  const extra   = filtered.filter(c=>!groups.includes(c.group));
+  const grouped=groups.map(g=>({g,items:filtered.filter(c=>c.group===g)})).filter(x=>x.items.length>0);
+  const extra=filtered.filter(c=>!groups.includes(c.group));
 
   return (
-    <div style={{minHeight:"100vh"}}>
-      {/* ── Nav ── */}
-      <div className="nav" style={{background:R,padding:"0 20px",display:"flex",alignItems:"center",
-        justifyContent:"space-between",minHeight:56,position:"sticky",top:0,zIndex:500,
-        boxShadow:`0 2px 12px ${R}55`,flexWrap:"wrap",gap:8}}>
+    <div style={{minHeight:"100vh",background:"#F7F7F8"}}>
+      {/* Nav */}
+      <div className="nav" style={{background:R,padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",minHeight:52,position:"sticky",top:0,zIndex:500,boxShadow:"0 1px 8px rgba(232,32,26,0.25)",flexWrap:"wrap",gap:8}}>
         <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
-          <div style={{fontSize:18,fontWeight:900,color:W,letterSpacing:-0.5,whiteSpace:"nowrap"}}>FZK Media</div>
-          <div style={{width:1,height:18,background:"rgba(255,255,255,0.3)",flexShrink:0}}/>
+          <div style={{fontSize:17,fontWeight:900,color:W,letterSpacing:-0.5,whiteSpace:"nowrap"}}>FZK Media</div>
+          <div style={{width:1,height:16,background:"rgba(255,255,255,0.25)",flexShrink:0}}/>
           <div style={{minWidth:0}}>
-            <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.9)",whiteSpace:"nowrap"}}>Cycle Tracker</div>
-            <div style={{fontSize:10,color:"rgba(255,255,255,0.55)",whiteSpace:"nowrap"}}>
+            <div style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.85)",whiteSpace:"nowrap"}}>Cycle Tracker</div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,0.5)",whiteSpace:"nowrap"}}>
               {today.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})}
-              {" · "}<span style={{color:syncClr}}>{syncTxt}</span>
+              {syncTxt&&<span style={{color:syncClr}}> · {syncTxt}</span>}
             </div>
           </div>
         </div>
-        <div className="nav-r" style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-          <button onClick={()=>setShowGrp(true)} style={{padding:"7px 12px",background:"rgba(255,255,255,0.12)",
-            border:"1.5px solid rgba(255,255,255,0.2)",borderRadius:8,color:W,fontSize:12,fontWeight:600}}>
-            ⚙ Groups
+        <div className="nav-r" style={{display:"flex",gap:6,alignItems:"center"}}>
+          <button onClick={()=>setShowGrp(true)} style={{padding:"6px 11px",background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.18)",borderRadius:8,color:W,fontSize:12,fontWeight:600,cursor:"pointer"}}>Groups</button>
+          <button onClick={()=>setShowRpt(true)} style={{padding:"6px 11px",background:alerts>0?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:8,color:alerts>0?R:W,fontSize:12,fontWeight:700,cursor:"pointer"}}>
+            {alerts>0?`${alerts} Alerts`:"Report"}
           </button>
-          <button onClick={()=>setShowRpt(true)} style={{padding:"7px 12px",
-            background:alerts>0?"rgba(255,255,255,0.92)":"rgba(255,255,255,0.12)",
-            border:"1.5px solid rgba(255,255,255,0.25)",borderRadius:8,
-            color:alerts>0?R:W,fontSize:12,fontWeight:700}}>
-            📧 {alerts>0?`${alerts} Alerts`:"Report"}
-          </button>
-          <button onClick={()=>setShowAI(s=>!s)} style={{padding:"7px 12px",
-            background:showAI?W:"rgba(255,255,255,0.12)",border:"1.5px solid rgba(255,255,255,0.25)",
-            borderRadius:8,color:showAI?R:W,fontSize:12,fontWeight:700}}>✦ AI</button>
-          <button onClick={updateKey} style={{padding:"7px 10px",background:"rgba(255,255,255,0.1)",
-            border:"1.5px solid rgba(255,255,255,0.2)",borderRadius:8,color:W,fontSize:12}} title="Update API Key">🔑</button>
-          <button onClick={addClient} style={{padding:"7px 14px",background:W,border:"none",
-            borderRadius:8,color:R,fontSize:12,fontWeight:800,boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>
-            + Add
-          </button>
+          <button onClick={()=>setShowAI(s=>!s)} style={{padding:"6px 11px",background:showAI?W:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:8,color:showAI?R:W,fontSize:12,fontWeight:700,cursor:"pointer"}}>AI</button>
+          <button onClick={updateKey} style={{padding:"6px 9px",background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,color:W,fontSize:12,cursor:"pointer"}} title="Update API Key">🔑</button>
+          <button onClick={addClient} style={{padding:"6px 13px",background:W,border:"none",borderRadius:8,color:R,fontSize:12,fontWeight:800,cursor:"pointer"}}>+ Add</button>
         </div>
       </div>
 
-      {/* ── Main ── */}
-      <div className="main" style={{maxWidth:view==="calendar"?1000:860,margin:"0 auto",padding:"24px 20px",overflowX:"hidden"}}>
-
+      <div className="main" style={{maxWidth:860,margin:"0 auto",padding:"22px 20px",overflowX:"hidden"}}>
         {/* Stats */}
-        <div className="stats" style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:20}}>
-          {[
-            {l:"Total",    v:clients.length,   c:R},
-            {l:"Active",   v:clients.filter(c=>c.group==="Active").length, c:GR},
-            {l:"Onboarding",v:clients.filter(c=>c.type==="onboarding").length,c:PU},
-            {l:"Overdue",  v:totalOv,   c:totalOv>0?R:G3},
-            {l:"Delayed",  v:totalDel,  c:totalDel>0?OR:G3},
-          ].map(s=>(
-            <div key={s.l} style={{background:W,border:`1.5px solid ${G1}`,borderRadius:12,
-              padding:"12px 14px",boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
-              <div style={{fontSize:22,fontWeight:900,color:s.c}}>{s.v}</div>
-              <div style={{fontSize:10,color:G5,marginTop:2,fontWeight:600}}>{s.l}</div>
+        <div className="stats" style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:18}}>
+          {[{l:"Total",v:clients.length,c:BK},{l:"Active",v:clients.filter(c=>c.group==="Active").length,c:GR},{l:"Onboarding",v:clients.filter(c=>c.type==="onboarding").length,c:PU},{l:"Overdue",v:totalOv,c:totalOv>0?R:G3},{l:"Delayed",v:totalDel,c:totalDel>0?OR:G3}].map(s=>(
+            <div key={s.l} style={{background:W,border:`1px solid ${G1}`,borderRadius:10,padding:"11px 12px",boxShadow:"0 1px 2px rgba(0,0,0,0.03)"}}>
+              <div style={{fontSize:20,fontWeight:800,color:s.c,lineHeight:1}}>{s.v}</div>
+              <div style={{fontSize:10,color:G4,marginTop:3,fontWeight:500}}>{s.l}</div>
             </div>
           ))}
         </div>
 
         {/* View toggle + search + filter */}
-        <div className="vrow" style={{display:"flex",gap:10,marginBottom:18,flexWrap:"wrap",alignItems:"center",justifyContent:"flex-start"}}>
-          <div style={{display:"flex",borderRadius:9,overflow:"hidden",border:`1.5px solid ${G3}`,flexShrink:0,alignSelf:"flex-start"}}>
-            {[["tracker","📋 Tracker"],["calendar","📅 Calendar"]].map(([v,l])=>(
-              <button key={v} onClick={()=>setView(v)}
-                style={{padding:"8px 14px",fontSize:12,fontWeight:view===v?700:500,border:"none",cursor:"pointer",
-                  background:view===v?R:W,color:view===v?W:G7}}>{l}</button>
+        <div className="view-row" style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
+          <div className="view-toggle" style={{display:"flex",borderRadius:9,overflow:"hidden",border:`1px solid ${G2}`,flexShrink:0}}>
+            {[["tracker","Tracker"],["calendar","Calendar"]].map(([v,l])=>(
+              <button key={v} onClick={()=>setView(v)} style={{padding:"8px 14px",fontSize:12,fontWeight:view===v?700:500,border:"none",cursor:"pointer",background:view===v?R:W,color:view===v?W:G7}}>{l}</button>
             ))}
           </div>
-          {view==="tracker"&&(
-            <>
-              <input className="vsearch" placeholder="🔍  Search clients…" value={search}
-                onChange={e=>setSearch(e.target.value)}
-                style={{...iS,flex:1,minWidth:160,padding:"9px 13px"}}/>
-              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                {["all",...groups].map(g=>(
-                  <button key={g} onClick={()=>setFilter(g)}
-                    style={{padding:"7px 11px",borderRadius:8,fontSize:11,cursor:"pointer",
-                      fontWeight:filter===g?700:500,
-                      background:filter===g?RL:W,
-                      border:`1.5px solid ${filter===g?RM:G3}`,
-                      color:filter===g?RD:G7}}>
-                    {g==="all"?"All":g}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+          {view==="tracker"&&<>
+            <input className="vsearch" placeholder="Search clients…" value={search} onChange={e=>setSearch(e.target.value)} style={{...iS,flex:1,minWidth:140,padding:"8px 12px"}}/>
+            <div className="filter-pills" style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+              {["all",...groups].map(g=>(
+                <button key={g} onClick={()=>setFilter(g)} style={{padding:"6px 11px",borderRadius:8,fontSize:11,cursor:"pointer",fontWeight:filter===g?700:500,background:filter===g?RL:W,border:`1px solid ${filter===g?RM:G2}`,color:filter===g?RD:G7}}>
+                  {g==="all"?"All":g}
+                </button>
+              ))}
+            </div>
+          </>}
         </div>
 
         {/* Legend */}
-        <div className="legend" style={{display:"flex",gap:12,marginBottom:16,flexWrap:"wrap",
-          padding:"9px 14px",background:W,borderRadius:10,border:`1.5px solid ${G1}`,alignItems:"center",
-          boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
-          {(view==="tracker"?CY_STAGES:CY_STAGES).map(s=>(
-            <div key={s.key} style={{display:"flex",alignItems:"center",gap:4}}>
-              <span style={{width:7,height:7,borderRadius:2,background:s.color,display:"inline-block"}}/>
-              <span style={{fontSize:10,color:G5,fontWeight:500}}>{s.label}</span>
-            </div>
-          ))}
-          <div style={{marginLeft:"auto",display:"flex",gap:10}}>
-            {[{l:"Done ✓",c:GR},{l:"Active",c:GR},{l:"Upcoming",c:G5},{l:"Overdue",c:R}].map(s=>(
-              <span key={s.l} style={{fontSize:10,color:s.c,display:"flex",alignItems:"center",gap:3,fontWeight:500}}>
-                <span style={{width:5,height:5,borderRadius:"50%",background:s.c,display:"inline-block"}}/>
-                {s.l}
-              </span>
+        {view==="tracker"&&(
+          <div className="legend" style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap",padding:"8px 12px",background:W,borderRadius:9,border:`1px solid ${G1}`,alignItems:"center"}}>
+            {CY_STAGES.map(s=>(
+              <div key={s.key} style={{display:"flex",alignItems:"center",gap:3}}>
+                <span style={{width:6,height:6,borderRadius:2,background:s.color,display:"inline-block"}}/>
+                <span style={{fontSize:10,color:G5}}>{s.label}</span>
+              </div>
             ))}
+            <div style={{marginLeft:"auto",display:"flex",gap:9}}>
+              {[{l:"Done",c:GR},{l:"Active",c:GR},{l:"Upcoming",c:G4},{l:"Overdue",c:R}].map(s=>(
+                <span key={s.l} style={{fontSize:10,color:s.c,display:"flex",alignItems:"center",gap:2}}>
+                  <span style={{width:5,height:5,borderRadius:"50%",background:s.c,display:"inline-block"}}/>{s.l}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Calendar */}
         {view==="calendar"&&<CalView clients={clients}/>}
@@ -1191,63 +997,47 @@ function App(){
         {/* Tracker */}
         {view==="tracker"&&(
           filtered.length===0
-            ? <div style={{textAlign:"center",padding:"60px 20px",color:G3,border:`2px dashed ${G1}`,
-                borderRadius:16,background:W}}>
-                <div style={{fontSize:32,marginBottom:10}}>◎</div>
-                <div style={{fontSize:14,color:G5}}>{search?"No clients match":"No clients yet"}</div>
+            ?<div style={{textAlign:"center",padding:"50px 20px",color:G3,border:`1px dashed ${G2}`,borderRadius:14,background:W}}>
+                <div style={{fontSize:28,marginBottom:8}}>◎</div>
+                <div style={{fontSize:13,color:G5}}>{search?"No clients match":"No clients yet"}</div>
               </div>
-            : <div style={{display:"flex",flexDirection:"column",gap:22}}>
-                {grouped.map(({g,items})=>{
-                  const isDrop=dragOver===g;
-                  return (
-                    <div key={g}
-                      onDragOver={e=>{e.preventDefault();setDragOver(g);}}
-                      onDrop={e=>{e.preventDefault();if(dragId!==null)upd(dragId,{group:g});setDragId(null);setDragOver(null);}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,
-                        padding:isDrop?"8px 12px":"0",background:isDrop?RL:"transparent",
-                        borderRadius:9,border:isDrop?`1.5px dashed ${R}`:"1.5px solid transparent",
-                        transition:"all 0.15s"}}>
-                        <span style={{fontSize:14}}>{({"Onboarding":"🌱","Active":"⚡","Getting Started":"🚀","OG Client":"⭐","To Start":"📋"})[g]||"●"}</span>
-                        <span style={{fontSize:11,letterSpacing:1.5,textTransform:"uppercase",color:R,fontWeight:800}}>{g}</span>
-                        <span style={{fontSize:11,color:G5,background:G1,padding:"1px 8px",borderRadius:99}}>{items.length}</span>
-                        <div style={{flex:1,height:1.5,background:G1}}/>
-                        {isDrop&&<span style={{fontSize:11,color:R,fontWeight:600}}>Drop here</span>}
-                      </div>
-                      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                        {items.map(c=>(
-                          <Card key={c.id} client={c}
-                            onUpdate={d=>upd(c.id,d)} onDelete={()=>del(c.id)}
-                            groups={groups} isDrag={dragId===c.id}
-                            onDragStart={(e,id)=>{setDragId(id);e.dataTransfer.effectAllowed="move";}}
-                            onDragEnd={()=>{setDragId(null);setDragOver(null);}}/>
-                        ))}
-                      </div>
+            :<div style={{display:"flex",flexDirection:"column",gap:20}}>
+              {grouped.map(({g,items})=>{
+                const isDrop=dragOver===g;
+                return (
+                  <div key={g} onDragOver={e=>{e.preventDefault();setDragOver(g);}} onDrop={e=>{e.preventDefault();if(dragId!==null)upd(dragId,{group:g});setDragId(null);setDragOver(null);}}>
+                    <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:8,padding:isDrop?"6px 10px":"0",background:isDrop?RL:"transparent",borderRadius:8,border:isDrop?`1px dashed ${R}`:"1px solid transparent",transition:"all 0.15s"}}>
+                      <span style={{fontSize:13}}>{({"Onboarding":"🌱","Active":"⚡","Getting Started":"🚀","OG Client":"⭐","To Start":"📋"})[g]||"●"}</span>
+                      <span style={{fontSize:11,letterSpacing:1.2,textTransform:"uppercase",color:G5,fontWeight:700}}>{g}</span>
+                      <span style={{fontSize:10,color:G4,background:G1,padding:"1px 7px",borderRadius:99}}>{items.length}</span>
+                      <div style={{flex:1,height:1,background:G1}}/>
+                      {isDrop&&<span style={{fontSize:11,color:R,fontWeight:600}}>Drop here</span>}
                     </div>
-                  );
-                })}
-                {extra.length>0&&(
-                  <div>
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-                      <span style={{fontSize:11,letterSpacing:1.5,textTransform:"uppercase",color:G5,fontWeight:700}}>Other</span>
-                      <div style={{flex:1,height:1.5,background:G1}}/>
-                    </div>
-                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                      {extra.map(c=>(
-                        <Card key={c.id} client={c}
-                          onUpdate={d=>upd(c.id,d)} onDelete={()=>del(c.id)}
-                          groups={groups} isDrag={dragId===c.id}
+                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                      {items.map(c=>(
+                        <Card key={c.id} client={c} onUpdate={d=>upd(c.id,d)} onDelete={()=>del(c.id)} groups={groups} isDrag={dragId===c.id}
                           onDragStart={(e,id)=>{setDragId(id);e.dataTransfer.effectAllowed="move";}}
                           onDragEnd={()=>{setDragId(null);setDragOver(null);}}/>
                       ))}
                     </div>
                   </div>
-                )}
-              </div>
+                );
+              })}
+              {extra.length>0&&(
+                <div>
+                  <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:8}}>
+                    <span style={{fontSize:11,letterSpacing:1.2,textTransform:"uppercase",color:G4,fontWeight:700}}>Other</span>
+                    <div style={{flex:1,height:1,background:G1}}/>
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                    {extra.map(c=><Card key={c.id} client={c} onUpdate={d=>upd(c.id,d)} onDelete={()=>del(c.id)} groups={groups} isDrag={dragId===c.id} onDragStart={(e,id)=>{setDragId(id);e.dataTransfer.effectAllowed="move";}} onDragEnd={()=>{setDragId(null);setDragOver(null);}}/>)}
+                  </div>
+                </div>
+              )}
+            </div>
         )}
 
-        <div style={{marginTop:36,textAlign:"center",fontSize:10,color:"#D1D5DB"}}>
-          FZK Media · Cycle Tracker v5 · {today.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
-        </div>
+        <div style={{marginTop:32,textAlign:"center",fontSize:10,color:G2}}>FZK Media · v6 · {today.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}</div>
       </div>
 
       {showAI&&<AIChat clients={clients} groups={groups} onClose={()=>setShowAI(false)}/>}
@@ -1257,15 +1047,12 @@ function App(){
   );
 }
 
-// ── ROOT — password gate ───────────────────────────────────────────────
+// ── ROOT ───────────────────────────────────────────────────────────
+const AUTH_V="fzk_v6";
 function Root(){
-  const authed = localStorage.getItem("fzk_auth")==="1" && localStorage.getItem("fzk_av")===AUTH_V;
-  const [ok,setOk] = useState(authed);
-  function unlock(){
-    localStorage.setItem("fzk_auth","1");
-    localStorage.setItem("fzk_av",AUTH_V);
-    setOk(true);
-  }
+  const authed=localStorage.getItem("fzk_auth")==="1"&&localStorage.getItem("fzk_av")===AUTH_V;
+  const [ok,setOk]=useState(authed);
+  function unlock(){localStorage.setItem("fzk_auth","1");localStorage.setItem("fzk_av",AUTH_V);setOk(true);}
   if(!ok) return <PwScreen onUnlock={unlock}/>;
   return <App/>;
 }
