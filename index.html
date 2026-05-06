@@ -46,7 +46,7 @@ const { useState, useMemo, useEffect, useCallback, useRef } = React;
 // ─── CONFIG — replace keys here ───────────────────────────────────────────────
 const SUPABASE_URL = "https://lnodjrxpnisldmgpfeme.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxub2RqcnhwbmlzbGRtZ3BmZW1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzQyOTEsImV4cCI6MjA5MzQxMDI5MX0.Z1bpBnmd-k5IgWli7fSm4jKXRF5EhGrR2MFC_nDsJFY";
-const ANTHROPIC_KEY = "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"; // 🔑 replace with your key
+const ANTHROPIC_KEY = () => localStorage.getItem("fzk_anthropic_key") || "";
 const TEAM_EMAILS = "fiza@fzkmedia.com,ashish@fzkmedia.com,amit@fzkmedia.com,sayali@fzkmedia.com,vidhi.intern@fzkmedia.com,nikita@fzkmedia.com,hello@fzkmedia.com";
 const POLL_MS = 15000;
 
@@ -453,7 +453,7 @@ function AIChat({clients,groups,onClose}) {
 
       const res=await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
-        headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:800,system:sys,messages:cleanMsgs}),
       });
       const d=await res.json();
@@ -932,24 +932,63 @@ function App() {
 const TRACKER_PASSWORD = "vibing@fzkMEdia26"; // 🔒 Change this password
 
 function PasswordScreen({onUnlock}) {
+  const [step, setStep] = useState("password"); // password | apikey
   const [pw, setPw] = useState("");
+  const [apiKey, setApiKey] = useState(localStorage.getItem("fzk_anthropic_key")||"");
   const [err, setErr] = useState(false);
-  function attempt() {
-    if(pw === TRACKER_PASSWORD) { localStorage.setItem("fzk_auth","1"); onUnlock(); }
-    else { setErr(true); setTimeout(()=>setErr(false),1500); setPw(""); }
+
+  function attemptPassword() {
+    if(pw === TRACKER_PASSWORD) {
+      localStorage.setItem("fzk_auth","1");
+      // If no API key stored yet, ask for it
+      if(!localStorage.getItem("fzk_anthropic_key")) setStep("apikey");
+      else onUnlock();
+    } else { setErr(true); setTimeout(()=>setErr(false),1500); setPw(""); }
   }
+
+  function saveApiKey() {
+    if(apiKey.trim().startsWith("sk-ant-")) {
+      localStorage.setItem("fzk_anthropic_key", apiKey.trim());
+      onUnlock();
+    } else { setErr(true); setTimeout(()=>setErr(false),2000); }
+  }
+
+  if(step === "apikey") return (
+    <div style={{minHeight:"100vh",background:C.red,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:C.white,borderRadius:20,padding:40,width:"100%",maxWidth:400,textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.2)"}}>
+        <div style={{fontSize:32,fontWeight:900,color:C.red,letterSpacing:-1,marginBottom:4}}>FZK Media</div>
+        <div style={{fontSize:13,color:C.gray500,marginBottom:8}}>AI Assistant Setup</div>
+        <div style={{fontSize:12,color:C.gray500,marginBottom:24,lineHeight:1.6,background:C.gray50,padding:"12px 16px",borderRadius:10,textAlign:"left"}}>
+          Enter your Anthropic API key to enable the AI chat. This is stored only on your device — never in the code.<br/><br/>
+          Get your key at: <strong>console.anthropic.com</strong>
+        </div>
+        <input type="password" value={apiKey} onChange={e=>setApiKey(e.target.value)}
+          onKeyDown={e=>e.key==="Enter"&&saveApiKey()}
+          placeholder="sk-ant-api03-..."
+          style={{...iBase,width:"100%",padding:"12px 16px",fontSize:13,border:`2px solid ${err?C.red:C.gray300}`,marginBottom:8}}/>
+        {err && <div style={{fontSize:12,color:C.red,marginBottom:8,fontWeight:600}}>Invalid key — must start with sk-ant-</div>}
+        <button onClick={saveApiKey} style={{width:"100%",padding:"12px",background:C.red,border:"none",borderRadius:10,color:C.white,fontSize:14,fontWeight:800,marginBottom:10,boxShadow:`0 4px 16px ${C.red}44`}}>
+          Save & Enter Tracker
+        </button>
+        <button onClick={onUnlock} style={{width:"100%",padding:"10px",background:"none",border:`1.5px solid ${C.gray300}`,borderRadius:10,color:C.gray500,fontSize:13,fontWeight:500}}>
+          Skip — use tracker without AI
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{minHeight:"100vh",background:C.red,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
       <div style={{background:C.white,borderRadius:20,padding:40,width:"100%",maxWidth:360,textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.2)"}}>
         <div style={{fontSize:32,fontWeight:900,color:C.red,letterSpacing:-1,marginBottom:4}}>FZK Media</div>
         <div style={{fontSize:13,color:C.gray500,marginBottom:28}}>Cycle Tracker · Team Access</div>
         <input type="password" value={pw} onChange={e=>setPw(e.target.value)}
-          onKeyDown={e=>e.key==="Enter"&&attempt()}
+          onKeyDown={e=>e.key==="Enter"&&attemptPassword()}
           placeholder="Enter team password"
           style={{...iBase,width:"100%",padding:"12px 16px",fontSize:15,textAlign:"center",border:`2px solid ${err?C.red:C.gray300}`,marginBottom:12,transition:"border-color 0.2s"}}
           autoFocus/>
         {err && <div style={{fontSize:12,color:C.red,marginBottom:8,fontWeight:600}}>Incorrect password. Try again.</div>}
-        <button onClick={attempt} style={{width:"100%",padding:"12px",background:C.red,border:"none",borderRadius:10,color:C.white,fontSize:15,fontWeight:800,boxShadow:`0 4px 16px ${C.red}44`}}>
+        <button onClick={attemptPassword} style={{width:"100%",padding:"12px",background:C.red,border:"none",borderRadius:10,color:C.white,fontSize:15,fontWeight:800,boxShadow:`0 4px 16px ${C.red}44`}}>
           Access Tracker
         </button>
         <div style={{fontSize:11,color:C.gray300,marginTop:16}}>FZK Media internal tool</div>
