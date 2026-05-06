@@ -4,9 +4,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>FZK Media — Cycle Tracker</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js" crossorigin="anonymous"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -48,8 +48,15 @@ select option{background:#fff;}
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
+<div id="root">
+  <div style="min-height:100vh;background:#E8201A;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:Inter,sans-serif;">
+    <div style="font-size:32px;font-weight:900;color:white;letter-spacing:-1px;">FZK Media</div>
+    <div style="width:28px;height:28px;border:3px solid white;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.7);">Loading tracker...</div>
+    <style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+  </div>
+</div>
+<script type="text/babel" data-presets="react">
 const {useState,useEffect,useCallback,useMemo,useRef} = React;
 
 // ── CONFIG ───────────────────────────────────────────────────────────
@@ -129,17 +136,27 @@ function buildStages(client){
 // ── SUPABASE ──────────────────────────────────────────────────────────
 const H = {apikey:SB_KEY, Authorization:`Bearer ${SB_KEY}`};
 async function dbGet(){
-  const r = await fetch(`${SB_URL}/rest/v1/cycle_tracker?id=eq.clients&select=data`,{headers:H});
+  // Select both data AND the table-level updated_at for reliable sync comparison
+  const r = await fetch(`${SB_URL}/rest/v1/cycle_tracker?id=eq.clients&select=data,updated_at`,{headers:H});
   const j = await r.json();
-  return j?.[0]?.data ?? null;
+  if(!j?.[0]) return null;
+  const payload = j[0].data ?? {};
+  // Attach the table-level updated_at so poll can compare it reliably
+  payload._ts = j[0].updated_at;
+  return payload;
 }
 async function dbSet(payload){
+  const ts = new Date().toISOString();
   const r = await fetch(`${SB_URL}/rest/v1/cycle_tracker?id=eq.clients`,{
     method:"PATCH",
     headers:{...H,"Content-Type":"application/json",Prefer:"return=minimal"},
-    body:JSON.stringify({data:payload, updated_at:new Date().toISOString()}),
+    body:JSON.stringify({
+      data: payload,
+      updated_at: ts  // update the actual table column so all devices can compare
+    }),
   });
   if(!r.ok) throw new Error(`DB error ${r.status}`);
+  return ts;
 }
 
 // ── DEFAULT CLIENTS ───────────────────────────────────────────────────
@@ -761,7 +778,7 @@ function GrpMgr({groups,onUpdate,onClose}){
           {groups.map(g=>(
             <div key={g} style={{display:"flex",alignItems:"center",justifyContent:"space-between",
               padding:"9px 13px",background:G0,borderRadius:9,border:`1.5px solid ${G1}`}}>
-              <span style={{fontSize:13,fontWeight:500,color:BK}}>{GROUP_ICONS[g]||"●"} {g}</span>
+              <span style={{fontSize:13,fontWeight:500,color:BK}}>{({"Onboarding":"🌱","Active":"⚡","Getting Started":"🚀","OG Client":"⭐","To Start":"📋"})[g]||"●"} {g}</span>
               <button onClick={()=>{if(groups.length>1)onUpdate(groups.filter(x=>x!==g));}}
                 style={{background:"none",border:"none",cursor:"pointer",color:RM,fontSize:16}}>✕</button>
             </div>
@@ -841,7 +858,7 @@ function PwScreen({onUnlock}){
   return (
     <div style={wrap}>
       <div style={box}>
-        <div style={{fontSize:42,fontWeight:900,color:R,letterSpacing:-3,marginBottom:2}}>FZK</div>
+        <div style={{fontSize:32,fontWeight:900,color:R,letterSpacing:-1,marginBottom:2}}>FZK Media</div>
         <div style={{fontSize:16,fontWeight:700,color:G7,marginBottom:6}}>Media · Cycle Tracker</div>
         <div style={{fontSize:11,color:G3,marginBottom:28}}>Internal Team Tool</div>
         <input type="password" value={pw} onChange={e=>setPw(e.target.value)}
@@ -887,12 +904,12 @@ function App(){
           setClients(d.clients);
           if(d.groups) setGroups(d.groups);
           setNextId(Math.max(...d.clients.map(c=>c.id),99)+1);
-          lastTsRef.current = d.updated_at||null;
+          lastTsRef.current = d._ts || d.updated_at || null;
         } else {
           setClients(DEF_CLIENTS);
           const ts = new Date().toISOString();
-          await dbSet({clients:DEF_CLIENTS,groups:DEF_GROUPS,updated_at:ts});
-          lastTsRef.current = ts;
+          const initTs = await dbSet({clients:DEF_CLIENTS,groups:DEF_GROUPS});
+          lastTsRef.current = initTs;
         }
         setSync("synced");
       } catch(e){
@@ -912,8 +929,8 @@ function App(){
     saveRef.current = setTimeout(async()=>{
       try{
         const ts = new Date().toISOString();
-        await dbSet({clients,groups,updated_at:ts});
-        lastTsRef.current = ts;
+        const savedTs = await dbSet({clients,groups});
+        lastTsRef.current = savedTs;
         setLastSave(new Date());
         setSync("synced");
       } catch(e){
@@ -932,12 +949,13 @@ function App(){
       if(saveRef.current) return; // skip while saving
       try{
         const d = await dbGet();
-        if(!d?.clients||!d.updated_at) return;
-        const remoteTs = new Date(d.updated_at).getTime();
+        if(!d?.clients) return;
+        const remoteTs = d._ts ? new Date(d._ts).getTime() : 0;
         const localTs  = lastTsRef.current ? new Date(lastTsRef.current).getTime() : 0;
-        if(remoteTs > localTs + 2000){
-          // Remote is newer — pull it
-          lastTsRef.current = d.updated_at;
+        if(remoteTs > localTs + 1000){
+          // Remote is newer — update local state
+          lastTsRef.current = d._ts;
+          console.log("🔄 Pulling remote update from", d._ts);
           setClients(prev=>{
             if(JSON.stringify(prev)===JSON.stringify(d.clients)) return prev;
             return d.clients;
@@ -971,7 +989,7 @@ function App(){
   if(!clients) return (
     <div style={{minHeight:"100vh",background:R,display:"flex",flexDirection:"column",
       alignItems:"center",justifyContent:"center",gap:16}}>
-      <div style={{fontSize:40,fontWeight:900,color:W,letterSpacing:-2}}>FZK</div>
+      <div style={{fontSize:32,fontWeight:900,color:W,letterSpacing:-1}}>FZK Media</div>
       <div style={{width:28,height:28,border:`3px solid ${W}`,borderTopColor:"transparent",
         borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
       <div style={{fontSize:13,color:"rgba(255,255,255,0.7)"}}>Loading tracker…</div>
@@ -1001,7 +1019,7 @@ function App(){
         justifyContent:"space-between",minHeight:56,position:"sticky",top:0,zIndex:500,
         boxShadow:`0 2px 12px ${R}55`,flexWrap:"wrap",gap:8}}>
         <div style={{display:"flex",alignItems:"center",gap:12}}>
-          <div style={{fontSize:22,fontWeight:900,color:W,letterSpacing:-1}}>FZK</div>
+          <div style={{fontSize:18,fontWeight:900,color:W,letterSpacing:-0.5}}>FZK Media</div>
           <div style={{width:1,height:18,background:"rgba(255,255,255,0.3)"}}/>
           <div>
             <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.9)"}}>Cycle Tracker</div>
@@ -1126,7 +1144,7 @@ function App(){
                         padding:isDrop?"8px 12px":"0",background:isDrop?RL:"transparent",
                         borderRadius:9,border:isDrop?`1.5px dashed ${R}`:"1.5px solid transparent",
                         transition:"all 0.15s"}}>
-                        <span style={{fontSize:14}}>{GROUP_ICONS[g]||"●"}</span>
+                        <span style={{fontSize:14}}>{({"Onboarding":"🌱","Active":"⚡","Getting Started":"🚀","OG Client":"⭐","To Start":"📋"})[g]||"●"}</span>
                         <span style={{fontSize:11,letterSpacing:1.5,textTransform:"uppercase",color:R,fontWeight:800}}>{g}</span>
                         <span style={{fontSize:11,color:G5,background:G1,padding:"1px 8px",borderRadius:99}}>{items.length}</span>
                         <div style={{flex:1,height:1.5,background:G1}}/>
@@ -1177,7 +1195,6 @@ function App(){
 }
 
 // ── ROOT — password gate ───────────────────────────────────────────────
-const AUTH_V = "fzk_v5";
 function Root(){
   const authed = localStorage.getItem("fzk_auth")==="1" && localStorage.getItem("fzk_av")===AUTH_V;
   const [ok,setOk] = useState(authed);
