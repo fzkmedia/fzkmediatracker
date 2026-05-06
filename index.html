@@ -24,7 +24,7 @@ select option{background:#fff;}
 
 /* ── Mobile ── */
 @media(max-width:640px){
-  .nav{flex-direction:column!important;height:auto!important;padding:12px 14px!important;gap:10px!important;}
+  .nav{flex-direction:column!important;height:auto!important;padding:12px 14px!important;gap:8px!important;align-items:flex-start!important;}
   .nav-r{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;width:100%!important;}
   .nav-r button{font-size:11px!important;padding:7px 4px!important;}
   .stats{grid-template-columns:repeat(3,1fr)!important;}
@@ -102,7 +102,8 @@ const GROUP_ICONS = {Onboarding:"🌱",Active:"⚡","Getting Started":"🚀","OG
 // ── HELPERS ───────────────────────────────────────────────────────────
 const toStr   = d => new Date(d).toISOString().split("T")[0];
 const addDays = (d,n) => { const r=new Date(d); r.setDate(r.getDate()+n); return r; };
-const fmtD    = d => new Date(d).toLocaleDateString("en-GB",{day:"2-digit",month:"short"});
+const fmtD     = d => new Date(d).toLocaleDateString("en-GB",{day:"2-digit",month:"short"});
+const fmtDateFull = d => new Date(d).toLocaleDateString("en-GB",{weekday:"short",day:"2-digit",month:"short"});
 const fmtDFull= d => new Date(d).toLocaleDateString("en-GB",{weekday:"short",day:"2-digit",month:"short"});
 const daysBetween = (a,b) => Math.floor((new Date(b)-new Date(a))/86400000);
 const elapsed = s => daysBetween(s, new Date());
@@ -238,22 +239,44 @@ function PostPlan({client,onUpdate}){
   const slots = Array.from({length:client.pieces},(_,i)=>{
     const auto = addDays(new Date(client.startDate), Math.round((i/client.pieces)*(client.dur||30)));
     const ov   = client.pd?.[`p${i+1}`];
-    return {i,auto,date:ov?new Date(ov):auto,isOv:!!ov};
+    const done = !!(client.pd?.[`p${i+1}_done`]);
+    return {i,auto,date:ov?new Date(ov):auto,isOv:!!ov,done};
   });
   function setPD(k,v){
     const pd={...(client.pd||{})};
     if(!v)delete pd[k];else pd[k]=v;
     onUpdate({...client,pd});
   }
+  function toggleDone(i){
+    const k=`p${i+1}_done`;
+    const pd={...(client.pd||{})};
+    if(pd[k]) delete pd[k]; else pd[k]=true;
+    onUpdate({...client,pd});
+  }
   return (
     <div className="postplan" style={{paddingLeft:30,marginTop:8}}>
-      <div style={{fontSize:10,color:G5,fontWeight:700,marginBottom:6,letterSpacing:0.5}}>POSTING SCHEDULE — tap any date to edit</div>
+      <div style={{fontSize:10,color:G5,fontWeight:700,marginBottom:6,letterSpacing:0.5}}>POSTING SCHEDULE — tap date to edit, tick when posted</div>
       <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
         {slots.map(s=>{
           const past=s.date<today;
           return (
-            <div key={s.i} style={{background:past?BB:G1,border:`1.5px solid ${s.isOv?R:past?"#93C5FD":G3}`,borderRadius:8,padding:"4px 10px",display:"flex",alignItems:"center",gap:5}}>
-              <span style={{fontSize:10,fontWeight:700,color:past?BL:G7}}>P{s.i+1}</span>
+            <div key={s.i} style={{
+              background:s.done?"#F0FDF4":past?BB:G1,
+              border:`1.5px solid ${s.done?"#86EFAC":s.isOv?R:past?"#93C5FD":G3}`,
+              borderRadius:8,padding:"5px 10px",
+              display:"flex",alignItems:"center",gap:6,
+              opacity:s.done?0.8:1,
+            }}>
+              {/* Checkbox for posted */}
+              <div onClick={()=>toggleDone(s.i)} style={{
+                width:16,height:16,borderRadius:4,flexShrink:0,cursor:"pointer",
+                border:`2px solid ${s.done?GR:G3}`,
+                background:s.done?GR:W,
+                display:"flex",alignItems:"center",justifyContent:"center",
+              }}>
+                {s.done&&<span style={{color:W,fontSize:9,fontWeight:900,lineHeight:1}}>✓</span>}
+              </div>
+              <span style={{fontSize:10,fontWeight:700,color:s.done?GR:past?BL:G7,textDecoration:s.done?"line-through":"none"}}>P{s.i+1}</span>
               <DateFld autoDate={s.auto} ovKey={`p${s.i+1}`} ovMap={client.pd||{}} onOv={(k,v)=>setPD(k,v)}/>
             </div>
           );
@@ -495,9 +518,12 @@ Answer specifically and concisely. Use bullets. Format dates as DD Mon.`;
 
     try{
       // Messages must start with user role — strip leading assistant messages
-      let apiMsgs = [...msgs.slice(1), um].filter(m=>m.role==="user"||m.role==="assistant");
-      while(apiMsgs.length>0&&apiMsgs[0].role==="assistant") apiMsgs.shift();
-      if(apiMsgs.length===0) apiMsgs=[um];
+      // Build clean message history — Anthropic requires starting with user role
+      const allMsgs = [...msgs, um].filter(m=>m.role==="user"||m.role==="assistant");
+      let startAt = 0;
+      while(startAt < allMsgs.length && allMsgs[startAt].role==="assistant") startAt++;
+      const apiMsgs = allMsgs.slice(startAt).map(m=>({role:m.role,content:m.content}));
+      if(apiMsgs.length===0) apiMsgs.push({role:"user",content:um.content});
 
       const res = await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
@@ -1018,12 +1044,12 @@ function App(){
       <div className="nav" style={{background:R,padding:"0 20px",display:"flex",alignItems:"center",
         justifyContent:"space-between",minHeight:56,position:"sticky",top:0,zIndex:500,
         boxShadow:`0 2px 12px ${R}55`,flexWrap:"wrap",gap:8}}>
-        <div style={{display:"flex",alignItems:"center",gap:12}}>
-          <div style={{fontSize:18,fontWeight:900,color:W,letterSpacing:-0.5}}>FZK Media</div>
-          <div style={{width:1,height:18,background:"rgba(255,255,255,0.3)"}}/>
-          <div>
-            <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.9)"}}>Cycle Tracker</div>
-            <div style={{fontSize:10,color:"rgba(255,255,255,0.55)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
+          <div style={{fontSize:18,fontWeight:900,color:W,letterSpacing:-0.5,whiteSpace:"nowrap"}}>FZK Media</div>
+          <div style={{width:1,height:18,background:"rgba(255,255,255,0.3)",flexShrink:0}}/>
+          <div style={{minWidth:0}}>
+            <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.9)",whiteSpace:"nowrap"}}>Cycle Tracker</div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,0.55)",whiteSpace:"nowrap"}}>
               {today.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})}
               {" · "}<span style={{color:syncClr}}>{syncTxt}</span>
             </div>
