@@ -528,7 +528,7 @@ Answer specifically and concisely. Use bullets. Format dates as DD Mon.`;
       const res = await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
         headers:{"Content-Type":"application/json","x-api-key":getKey(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:800,system:sys,messages:apiMsgs}),
+        body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:800,system:sys,messages:apiMsgs}),
       });
       const d = await res.json();
       if(d.error) throw new Error(d.error.message);
@@ -595,6 +595,7 @@ Answer specifically and concisely. Use bullets. Format dates as DD Mon.`;
 // ── CALENDAR VIEW ─────────────────────────────────────────────────────
 function CalView({clients}){
   const [wk,setWk] = useState(0);
+  const [selectedDay, setSelectedDay] = useState(null);
   const today = useMemo(()=>{const d=new Date();d.setHours(0,0,0,0);return d;},[]);
 
   const wkStart = useMemo(()=>{
@@ -619,20 +620,30 @@ function CalView({clients}){
         });
       });
       if(c.pieces>0){
-        const d=c.dur||30;
+        const dur=c.dur||30;
         Array.from({length:c.pieces},(_,i)=>{
           const ov=c.pd?.[`p${i+1}`];
-          const dt=ov?new Date(ov):addDays(new Date(c.startDate),Math.round((i/c.pieces)*d));
+          const dt=ov?new Date(ov):addDays(new Date(c.startDate),Math.round((i/c.pieces)*dur));
           const ds=dt.toDateString();
-          if(m[ds]!==undefined) m[ds].push({client:c.name,stage:`Post P${i+1}`,status:"posting",color:BL,done:false});
+          if(m[ds]!==undefined) m[ds].push({client:c.name,stage:`Post P${i+1}`,status:"posting",color:BL,done:!!(c.pd?.[`p${i+1}_done`])});
         });
       }
     });
     return m;
   },[clients,wkStart]);
 
-  const btnS = {padding:"7px 14px",background:W,border:`1.5px solid ${G3}`,borderRadius:8,
-    fontSize:12,color:G7,cursor:"pointer"};
+  const btnS = {padding:"7px 14px",background:W,border:`1.5px solid ${G3}`,borderRadius:8,fontSize:12,color:G7,cursor:"pointer"};
+
+  // Sunday fun message
+  function getDayContent(d) {
+    const isSun = d.getDay() === 0;
+    const tasks = byDay[d.toDateString()]||[];
+    return {isSun, tasks};
+  }
+
+  const selectedTasks = selectedDay ? (byDay[selectedDay.toDateString()]||[]) : (byDay[today.toDateString()]||[]);
+  const selectedIsSun = selectedDay ? selectedDay.getDay()===0 : today.getDay()===0;
+  const displayDate = selectedDay || today;
 
   return (
     <div>
@@ -644,61 +655,87 @@ function CalView({clients}){
         </span>
         <button onClick={()=>setWk(w=>w+1)} style={btnS}>Next →</button>
       </div>
-      {wk!==0&&<button onClick={()=>setWk(0)} style={{...btnS,marginBottom:12,fontSize:11}}>↩ Today</button>}
+      {wk!==0&&<button onClick={()=>{setWk(0);setSelectedDay(null);}} style={{...btnS,marginBottom:12,fontSize:11}}>↩ Today</button>}
 
+      {/* 7-day grid */}
       <div className="cal-grid" style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:8}}>
         {days.map(d=>{
           const isT=d.toDateString()===today.toDateString();
-          const tasks=byDay[d.toDateString()]||[];
+          const isSel=selectedDay&&d.toDateString()===selectedDay.toDateString();
+          const {isSun,tasks}=getDayContent(d);
           return (
-            <div key={d.toDateString()} style={{background:isT?RL:W,
-              border:`1.5px solid ${isT?RM:G1}`,borderRadius:12,padding:"10px 8px",minHeight:110}}>
+            <div key={d.toDateString()}
+              onClick={()=>setSelectedDay(prev=>prev&&prev.toDateString()===d.toDateString()?null:new Date(d))}
+              style={{
+                background:isSel?"#FFF0F0":isT?RL:W,
+                border:`1.5px solid ${isSel?R:isT?RM:G1}`,
+                borderRadius:12,padding:"10px 8px",minHeight:110,
+                cursor:"pointer",transition:"all 0.15s",
+                boxShadow:isSel?`0 2px 12px ${R}33`:"none",
+              }}>
               <div style={{marginBottom:7}}>
-                <div style={{fontSize:10,color:isT?R:G5,fontWeight:700,textTransform:"uppercase"}}>{d.toLocaleDateString("en-GB",{weekday:"short"})}</div>
-                <div style={{fontSize:18,fontWeight:800,color:isT?R:BK}}>{d.getDate()}</div>
+                <div style={{fontSize:10,color:isSel?R:isT?R:G5,fontWeight:700,textTransform:"uppercase"}}>{d.toLocaleDateString("en-GB",{weekday:"short"})}</div>
+                <div style={{fontSize:18,fontWeight:800,color:isSel?R:isT?R:BK}}>{d.getDate()}</div>
               </div>
-              {tasks.length===0&&<div style={{fontSize:9,color:G3}}>—</div>}
-              <div style={{display:"flex",flexDirection:"column",gap:3}}>
-                {tasks.slice(0,5).map((t,i)=>(
-                  <div key={i} style={{fontSize:9,padding:"3px 5px",borderRadius:5,lineHeight:1.3,
-                    background:t.done?GB:t.status==="overdue"?RL:`${t.color}15`,
-                    border:`1px solid ${t.done?"#BBF7D0":t.status==="overdue"?RM:`${t.color}44`}`,
-                    color:t.done?GR:t.status==="overdue"?RD:G7}}>
-                    <div style={{fontWeight:700,color:t.color,fontSize:8}}>{t.client.split(" ")[0]}</div>
-                    {t.stage}
-                  </div>
-                ))}
-                {tasks.length>5&&<div style={{fontSize:9,color:G5}}>+{tasks.length-5} more</div>}
-              </div>
+              {isSun
+                ? <div style={{fontSize:9,color:G3,fontStyle:"italic",lineHeight:1.4}}>🌙 Rest day</div>
+                : tasks.length===0
+                  ? <div style={{fontSize:9,color:G3}}>—</div>
+                  : <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                      {tasks.slice(0,4).map((t,i)=>(
+                        <div key={i} style={{fontSize:9,padding:"3px 5px",borderRadius:5,lineHeight:1.3,
+                          background:t.done?GB:t.status==="overdue"?RL:`${t.color}15`,
+                          border:`1px solid ${t.done?"#BBF7D0":t.status==="overdue"?RM:`${t.color}44`}`,
+                          color:t.done?GR:t.status==="overdue"?RD:G7}}>
+                          <div style={{fontWeight:700,color:t.color,fontSize:8}}>{t.client.split(" ")[0]}</div>
+                          {t.stage}
+                        </div>
+                      ))}
+                      {tasks.length>4&&<div style={{fontSize:9,color:G5,fontWeight:600}}>+{tasks.length-4} more</div>}
+                    </div>
+              }
             </div>
           );
         })}
       </div>
 
-      <div style={{marginTop:20,padding:"16px 20px",background:W,borderRadius:12,border:`1.5px solid ${G1}`}}>
-        <div style={{fontSize:13,fontWeight:700,color:BK,marginBottom:10}}>📋 Today — {fmtDateFull(today)}</div>
-        {(byDay[today.toDateString()]||[]).length===0
-          ? <div style={{fontSize:12,color:G3}}>Nothing active today</div>
-          : <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              {(byDay[today.toDateString()]||[]).map((t,i)=>(
-                <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",
-                  background:G0,borderRadius:8,border:`1.5px solid ${G1}`}}>
-                  <span style={{width:8,height:8,borderRadius:"50%",background:t.color,flexShrink:0,display:"inline-block"}}/>
-                  <span style={{fontSize:13,fontWeight:600,color:BK,flex:1}}>{t.client}</span>
-                  <span style={{fontSize:12,color:G5}}>{t.stage}</span>
-                  <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,fontWeight:500,
-                    background:t.status==="overdue"?RL:t.done?GB:G1,
-                    color:t.status==="overdue"?RD:t.done?GR:G5}}>
-                    {t.done?"Done":t.status}
-                  </span>
-                </div>
-              ))}
+      {/* Expanded day view */}
+      <div style={{marginTop:16,padding:"16px 20px",background:W,borderRadius:12,border:`1.5px solid ${selectedDay?RM:G1}`,
+        boxShadow:selectedDay?`0 2px 12px ${R}22`:"none",transition:"all 0.2s"}}>
+        <div style={{fontSize:13,fontWeight:700,color:BK,marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+          📋 {selectedDay?"Selected: ":"Today — "}{fmtDateFull(displayDate)}
+          {selectedDay&&<button onClick={()=>setSelectedDay(null)} style={{fontSize:10,padding:"2px 8px",borderRadius:20,border:`1px solid ${G3}`,background:G0,color:G5,cursor:"pointer",marginLeft:"auto"}}>Clear</button>}
+        </div>
+        {selectedIsSun
+          ? <div style={{textAlign:"center",padding:"20px",color:G5}}>
+              <div style={{fontSize:28,marginBottom:8}}>🌙</div>
+              <div style={{fontSize:14,fontWeight:600,color:G7}}>Sunday — Rest Day</div>
+              <div style={{fontSize:12,color:G3,marginTop:4}}>No work scheduled. Recharge! ✨</div>
             </div>
+          : selectedTasks.length===0
+            ? <div style={{fontSize:12,color:G3,textAlign:"center",padding:"12px"}}>Nothing scheduled for this day 🎉</div>
+            : <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {selectedTasks.map((t,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",
+                    background:t.status==="overdue"?RL:t.done?GB:G0,
+                    borderRadius:8,border:`1.5px solid ${t.status==="overdue"?RM:t.done?"#BBF7D0":G1}`}}>
+                    <span style={{width:8,height:8,borderRadius:"50%",background:t.color,flexShrink:0,display:"inline-block"}}/>
+                    <span style={{fontSize:13,fontWeight:600,color:BK,flex:1}}>{t.client}</span>
+                    <span style={{fontSize:12,color:G5}}>{t.stage}</span>
+                    <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,fontWeight:500,
+                      background:t.status==="overdue"?RL:t.done?GB:G1,
+                      color:t.status==="overdue"?RD:t.done?GR:G5}}>
+                      {t.done?"✓ Done":t.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
         }
       </div>
     </div>
   );
 }
+
 
 // ── DELAY REPORT ──────────────────────────────────────────────────────
 function Report({clients,onClose}){
@@ -1099,8 +1136,8 @@ function App(){
         </div>
 
         {/* View toggle + search + filter */}
-        <div className="vrow" style={{display:"flex",gap:10,marginBottom:18,flexWrap:"wrap",alignItems:"center"}}>
-          <div style={{display:"flex",borderRadius:9,overflow:"hidden",border:`1.5px solid ${G3}`,flexShrink:0}}>
+        <div className="vrow" style={{display:"flex",gap:10,marginBottom:18,flexWrap:"wrap",alignItems:"center",justifyContent:"flex-start"}}>
+          <div style={{display:"flex",borderRadius:9,overflow:"hidden",border:`1.5px solid ${G3}`,flexShrink:0,alignSelf:"flex-start"}}>
             {[["tracker","📋 Tracker"],["calendar","📅 Calendar"]].map(([v,l])=>(
               <button key={v} onClick={()=>setView(v)}
                 style={{padding:"8px 14px",fontSize:12,fontWeight:view===v?700:500,border:"none",cursor:"pointer",
