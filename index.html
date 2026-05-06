@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Inter','Segoe UI',sans-serif;background:#F5F6FA;overflow-x:hidden;max-width:100vw;}
+  body{font-family:'Inter','Segoe UI',sans-serif;background:linear-gradient(160deg,#F8F4FF 0%,#FFF5F5 40%,#F0F7FF 100%);min-height:100vh;overflow-x:hidden;}
   input:focus,select:focus,textarea:focus{border-color:#E8201A!important;box-shadow:0 0 0 3px rgba(232,32,26,0.12);outline:none;}
   select option{background:#fff;}
   ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:#D1D5DB;border-radius:99px;}
@@ -20,48 +20,41 @@
   .card{animation:fadeIn 0.2s ease;}
   button{cursor:pointer;font-family:'Inter','Segoe UI',sans-serif;}
   button:active{transform:scale(0.97);}
-  /* ── Mobile responsive ── */
+  /* ── Global mobile guard ── */
+  html, body { overflow-x: hidden; max-width: 100vw; }
+
   @media(max-width:680px){
-    body{overflow-x:hidden;}
-    /* Nav */
-    .fzk-nav{flex-direction:column!important;height:auto!important;padding:12px!important;gap:10px!important;}
-    .fzk-nav-left{width:100%;}
-    .fzk-nav-right{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;width:100%!important;}
-    .fzk-nav-right button{font-size:11px!important;padding:7px 6px!important;}
-    /* Stats */
-    .fzk-stats{grid-template-columns:repeat(3,1fr)!important;}
-    /* View row */
-    .fzk-viewrow{flex-direction:column!important;gap:8px!important;}
-    .fzk-search{width:100%!important;min-width:unset!important;}
-    .fzk-pills{flex-wrap:wrap!important;}
-    .fzk-pills button{font-size:10px!important;padding:5px 8px!important;}
-    /* Legend */
-    .fzk-legend{display:none!important;}
+    /* Nav stacks vertically */
+    .fzk-nav { flex-direction:column!important; height:auto!important; padding:12px!important; gap:10px!important; }
+    .fzk-nav-right { display:grid!important; grid-template-columns:1fr 1fr!important; gap:6px!important; width:100%!important; }
+    .fzk-nav-right button { font-size:11px!important; padding:7px 4px!important; text-align:center!important; }
+    /* Stats: 3 col grid */
+    .fzk-stats { grid-template-columns:repeat(3,1fr)!important; }
+    /* View row stacks */
+    .fzk-viewrow { flex-direction:column!important; gap:8px!important; }
+    .fzk-search { width:100%!important; min-width:0!important; }
     /* Cards */
-    .fzk-card-hdr{gap:8px!important;padding:12px!important;}
-    .fzk-avatar{width:32px!important;height:32px!important;border-radius:8px!important;font-size:12px!important;}
-    .fzk-card-name{font-size:12px!important;}
-    .fzk-prog{width:56px!important;}
-    .fzk-prog-label{display:none!important;}
-    /* Expanded card */
-    .fzk-exp{padding:0 12px 14px!important;}
-    .fzk-edit-row{flex-wrap:wrap!important;}
-    .fzk-edit-row>div{flex:1 1 120px!important;}
-    .fzk-edit-row input,.fzk-edit-row select,.fzk-edit-row textarea{width:100%!important;font-size:12px!important;}
-    /* Stage rows */
-    .fzk-stage{flex-wrap:wrap!important;gap:5px!important;}
-    .fzk-stage-dates{display:none!important;}
-    /* Calendar */
-    .fzk-cal-grid{grid-template-columns:repeat(4,1fr)!important;}
-    .fzk-cal-grid>div:nth-child(n+5){display:none!important;}
-    /* AI panel */
-    .fzk-ai{width:100vw!important;left:0!important;right:0!important;}
-    /* Report */
-    .fzk-report{padding:18px!important;}
+    .fzk-card-hdr { padding:12px!important; gap:8px!important; }
+    .fzk-avatar { width:30px!important; height:30px!important; font-size:12px!important; border-radius:8px!important; }
+    .fzk-prog { width:54px!important; }
+    .fzk-exp { padding:0 10px 14px!important; }
+    /* Stage rows: hide date overrides on mobile for cleanliness */
+    .fzk-stage-dates { display:none!important; }
+    /* Edit fields wrap */
+    .fzk-editrow { flex-wrap:wrap!important; gap:8px!important; }
+    .fzk-editrow > div { flex:1 1 130px!important; min-width:0!important; }
+    .fzk-editrow input, .fzk-editrow select, .fzk-editrow textarea { width:100%!important; font-size:12px!important; }
+    /* Calendar: 4 days, hide rest */
+    .fzk-cal { grid-template-columns:repeat(4,1fr)!important; }
+    .fzk-cal > div:nth-child(n+5) { display:none!important; }
+    /* Legend hide */
+    .fzk-legend { display:none!important; }
+    /* AI panel full width */
+    .fzk-ai { width:100vw!important; left:0!important; right:0!important; }
     /* Main pad */
-    .fzk-main{padding:14px 10px!important;max-width:100%!important;}
-    /* Posting plan */
-    .fzk-postplan{padding-left:0!important;}
+    .fzk-main { padding:14px 10px!important; }
+    /* Posting plan compact */
+    .fzk-postplan { padding-left:0!important; }
   }
 </style>
 </head>
@@ -75,7 +68,7 @@ const SUPABASE_URL = "https://lnodjrxpnisldmgpfeme.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxub2RqcnhwbmlzbGRtZ3BmZW1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzQyOTEsImV4cCI6MjA5MzQxMDI5MX0.Z1bpBnmd-k5IgWli7fSm4jKXRF5EhGrR2MFC_nDsJFY";
 const ANTHROPIC_KEY = () => localStorage.getItem("fzk_anthropic_key") || "";
 const TEAM_EMAILS = "fiza@fzkmedia.com,ashish@fzkmedia.com,amit@fzkmedia.com,sayali@fzkmedia.com,vidhi.intern@fzkmedia.com,nikita@fzkmedia.com,hello@fzkmedia.com";
-const POLL_MS = 10000;
+const POLL_MS = 8000;
 
 // ─── BRAND ────────────────────────────────────────────────────────────────────
 const C = {
@@ -250,7 +243,7 @@ function PostingPlan({client,onUpdate}) {
     onUpdate({...client,postDates:pd});
   }
   return (
-    <div style={{paddingLeft:30,marginTop:8}}>
+    <div className="fzk-postplan" style={{paddingLeft:30,marginTop:8}}>
       <div style={{fontSize:10,color:C.gray500,fontWeight:700,marginBottom:6,letterSpacing:0.5}}>POSTING SCHEDULE — click any date to edit</div>
       <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
         {slots.map(s=>{
@@ -300,7 +293,7 @@ function Card({client,onUpdate,onDelete,groups,isDragging,onDragStart,onDragEnd}
 
   return (
     <div draggable onDragStart={e=>onDragStart(e,client.id)} onDragEnd={onDragEnd} className="card"
-      style={{background:C.white,border:`1.5px solid ${isDelayed?C.redMid:open?"#D1D5DB":C.gray100}`,borderLeft:`4px solid ${phColor}`,borderRadius:14,overflow:"hidden",boxShadow:open?"0 4px 20px rgba(0,0,0,0.08)":"0 1px 4px rgba(0,0,0,0.04)",opacity:isDragging?0.4:1,cursor:"grab",transition:"border-color 0.2s,box-shadow 0.2s"}}>
+      style={{background:C.white,border:`1.5px solid ${isDelayed?C.redMid:open?"#D1D5DB":C.gray100}`,borderLeft:`4px solid ${phColor}`,borderRadius:16,overflow:"hidden",boxShadow:open?"0 4px 20px rgba(0,0,0,0.08)":"0 1px 4px rgba(0,0,0,0.04)",opacity:isDragging?0.4:1,cursor:"grab",transition:"border-color 0.2s,box-shadow 0.2s"}}>
 
       {/* Header */}
       <div className="fzk-card-hdr" style={{padding:"14px 18px",display:"flex",alignItems:"center",gap:12,userSelect:"none"}} onClick={()=>setOpen(o=>!o)}>
@@ -341,9 +334,9 @@ function Card({client,onUpdate,onDelete,groups,isDragging,onDragStart,onDragEnd}
 
       {/* Expanded */}
       {open&&(
-        <div style={{borderTop:`1.5px solid ${C.gray100}`,padding:"0 18px 20px",background:C.gray50}}>
+        <div className="fzk-exp" style={{borderTop:`1.5px solid ${C.gray100}`,padding:"0 18px 20px",background:C.gray50}}>
           {/* Edit fields */}
-          <div style={{display:"flex",gap:10,padding:"14px 0 16px",flexWrap:"wrap",alignItems:"flex-end"}}>
+          <div className="fzk-editrow" style={{display:"flex",gap:10,padding:"14px 0 16px",flexWrap:"wrap",alignItems:"flex-end"}}>
             {/* Type toggle */}
             <div>
               <label style={lbl}>TYPE</label>
@@ -415,15 +408,15 @@ function Card({client,onUpdate,onDelete,groups,isDragging,onDragStart,onDragEnd}
               const sc=SC[s.status];
               return (
                 <div key={s.key} style={{background:sc.bg,border:`1.5px solid ${sc.border}`,borderRadius:10,padding:"10px 14px"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:9,flexWrap:"wrap"}}>
+                  <div className="fzk-stage" style={{display:"flex",alignItems:"center",gap:9,flexWrap:"wrap"}}>
                     <CB checked={s.done} color={s.color} onChange={v=>toggleCheck(s.key,v)}/>
                     <span style={{fontSize:13,fontWeight:600,color:s.done?C.gray300:C.black,flex:1,textDecoration:s.done?"line-through":"none",minWidth:120}}>{s.label}</span>
-                    <div style={{display:"flex",alignItems:"center",gap:4}}>
+                    <div className="fzk-stage-dates" style={{display:"flex",alignItems:"center",gap:4}}>
                       <span style={{fontSize:10,color:C.gray500}}>From:</span>
                       <DateField autoDate={s.autoStart} overrideKey={s.key+"_start"} overrides={client.dateOverrides||{}} onOverride={override}/>
                     </div>
                     <span style={{fontSize:10,color:C.gray300}}>→</span>
-                    <div style={{display:"flex",alignItems:"center",gap:4}}>
+                    <div className="fzk-stage-dates" style={{display:"flex",alignItems:"center",gap:4}}>
                       <span style={{fontSize:10,color:C.gray500}}>To:</span>
                       <DateField autoDate={s.autoEnd} overrideKey={s.key+"_end"} overrides={client.dateOverrides||{}} onOverride={override}/>
                     </div>
@@ -572,7 +565,7 @@ function CalView({clients}) {
         <button onClick={()=>setWk(w=>w+1)} style={{padding:"7px 14px",background:C.white,border:`1.5px solid ${C.gray300}`,borderRadius:8,fontSize:12,color:C.gray700}}>Next →</button>
       </div>
       {wk!==0&&<button onClick={()=>setWk(0)} style={{fontSize:11,padding:"4px 12px",borderRadius:20,border:`1.5px solid ${C.gray300}`,background:C.gray50,color:C.gray700,marginBottom:12}}>↩ Today</button>}
-      <div className="fzk-cal-grid" style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:8}}>
+      <div className="fzk-cal" style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:8}}>
         {days.map(d=>{
           const isToday=d.toDateString()===today.toDateString();
           const tasks=byDay[d.toDateString()]||[];
@@ -767,28 +760,25 @@ function App() {
     },800);
   },[clients,groups]);
 
-  // Poll every 10s — pull remote if newer than what we last saved
+  // Poll every 8s — compare actual remote timestamp to what we last wrote
   useEffect(()=>{
-    const poll=setInterval(async()=>{
-      if(saveRef.current) return; // skip if actively saving
+    const isSaving = () => !!saveRef.current;
+    const interval = setInterval(async()=>{
+      if(isSaving()) return; // don't overwrite while we're mid-save
       try{
-        const d=await dbGet();
-        if(!d?.clients||!d.updatedAt) return;
-        const remoteTs=new Date(d.updatedAt).getTime();
-        const localTs=lastSavedTsRef.current?new Date(lastSavedTsRef.current).getTime():0;
-        if(remoteTs>localTs+3000){
-          lastSavedTsRef.current=d.updatedAt;
-          setClients(prev=>{
-            // only update if actually different to avoid re-render loop
-            if(JSON.stringify(prev)===JSON.stringify(d.clients)) return prev;
-            return d.clients;
-          });
-          if(d.groups) setGroups(g=>JSON.stringify(g)===JSON.stringify(d.groups)?g:d.groups);
+        const d = await dbGet();
+        if(!d?.clients || !d.updatedAt) return;
+        const remote = new Date(d.updatedAt).getTime();
+        const local  = lastSavedTsRef.current ? new Date(lastSavedTsRef.current).getTime() : 0;
+        if(remote > local + 1500){ // remote is newer by >1.5s → pull it
+          lastSavedTsRef.current = d.updatedAt;
+          setClients(c => JSON.stringify(c)===JSON.stringify(d.clients) ? c : d.clients);
+          if(d.groups) setGroups(g => JSON.stringify(g)===JSON.stringify(d.groups) ? g : d.groups);
         }
-      } catch{}
-    },10000);
-    return()=>clearInterval(poll);
-  },[]);
+      } catch(e){ console.warn("Poll error:", e); }
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []); // empty deps — runs once, never re-registers
 
   const updateClient=useCallback((id,data)=>setClients(prev=>prev.map(c=>c.id===id?{...c,...data}:c)),[]);
   const deleteClient=useCallback((id)=>setClients(prev=>prev.filter(c=>c.id!==id)),[]);
@@ -809,7 +799,7 @@ function App() {
 
   const today=new Date();
   const syncLabel={saving:"Saving…",synced:`● Synced${lastSaved?" "+lastSaved.toLocaleDateString("en-GB",{day:"2-digit",month:"short"})+" "+lastSaved.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):""}`,error:"⚠ Sync error",loading:""}[sync]||"";
-  const syncColor={saving:C.orange,synced:C.green,error:C.red,loading:C.gray300}[sync];
+  const syncColor={saving:'#FFD580',synced:'rgba(255,255,255,0.85)',error:'#FFD580',loading:'rgba(255,255,255,0.4)'}[sync];
   const totalOverdue=clients.reduce((a,c)=>a+getStages(c).filter(s=>s.status==="overdue").length,0);
   const totalDelayed=clients.filter(c=>elapsed(c.startDate)>(c.duration||30)).length;
   const alerts=totalOverdue+totalDelayed;
@@ -825,23 +815,23 @@ function App() {
   return (
     <div style={{minHeight:"100vh",background:C.gray50}}>
       {/* Nav */}
-      <div className="fzk-nav" style={{background:C.red,padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between",minHeight:56,position:"sticky",top:0,zIndex:500,boxShadow:"0 2px 12px rgba(232,32,26,0.3)"}}>
+      <div className="fzk-nav" style={{background:C.red,padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between",minHeight:56,position:"sticky",top:0,zIndex:500,boxShadow:"0 2px 12px rgba(232,32,26,0.3)",flexWrap:"wrap"}}>
         <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
           <div style={{fontSize:22,fontWeight:900,color:C.white,letterSpacing:-0.5}}>FZK Media</div>
           <div style={{width:1,height:20,background:"rgba(255,255,255,0.3)"}}/>
           <div>
-            <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.85)"}}>Cycle Tracker</div>
+            <div><div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.9)"}}>Cycle Tracker</div><div style={{fontSize:10,color:"rgba(255,255,255,0.55)",marginTop:1}}>{today.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})}</div></div>
             <div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>{today.toLocaleDateString("en-GB",{weekday:"short",day:"2-digit",month:"short",year:"numeric"})}</div>
           </div>
           <span style={{fontSize:11,color:syncColor,fontWeight:500}}>{syncLabel}</span>
         </div>
-        <div className="nav-buttons" style={{display:"flex",gap:8,alignItems:"center"}}>
+        <div className="fzk-nav-right" style={{display:"flex",gap:8,alignItems:"center"}}>
           <button onClick={()=>setShowGrp(true)} style={{padding:"7px 13px",background:"rgba(255,255,255,0.15)",border:"1.5px solid rgba(255,255,255,0.25)",borderRadius:8,color:C.white,fontSize:12,fontWeight:600}}>⚙ Groups</button>
           <button onClick={()=>setShowRpt(true)} style={{padding:"7px 13px",background:alerts>0?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.15)",border:"1.5px solid rgba(255,255,255,0.25)",borderRadius:8,color:alerts>0?C.red:C.white,fontSize:12,fontWeight:700}}>
             📧 {alerts>0?`${alerts} Alerts`:"Report"}
           </button>
           <button onClick={()=>setShowAI(s=>!s)} style={{padding:"7px 13px",background:showAI?C.white:"rgba(255,255,255,0.15)",border:"1.5px solid rgba(255,255,255,0.25)",borderRadius:8,color:showAI?C.red:C.white,fontSize:12,fontWeight:700}}>✦ AI Chat</button>
-          <button onClick={()=>{const k=prompt("Paste Anthropic API key (sk-ant-...):","");if(k&&k.trim().startsWith("sk-ant-")){localStorage.setItem("fzk_anthropic_key",k.trim());alert("✅ Key saved!");}else if(k){alert("Invalid — must start with sk-ant-");}}} style={{padding:"7px 10px",background:"rgba(255,255,255,0.12)",border:"1.5px solid rgba(255,255,255,0.2)",borderRadius:8,color:"rgba(255,255,255,0.8)",fontSize:11}}>🔑</button>
+          <button onClick={()=>{const k=prompt("New Anthropic API key (sk-ant-...):","");if(k&&k.trim().startsWith("sk-ant-")){localStorage.setItem("fzk_anthropic_key",k.trim());alert("✅ Key updated!");}else if(k){alert("Invalid — must start with sk-ant-");}}} style={{padding:"7px 10px",background:"rgba(255,255,255,0.12)",border:"1.5px solid rgba(255,255,255,0.25)",borderRadius:8,color:C.white,fontSize:12,fontWeight:600}} title="Update API Key">🔑</button>
           <button onClick={addClient} style={{padding:"7px 16px",background:C.white,border:"none",borderRadius:8,color:C.red,fontSize:12,fontWeight:800,boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>+ Add Client</button>
         </div>
       </div>
@@ -873,7 +863,7 @@ function App() {
           {view==="tracker"&&<>
             <input className="fzk-search" placeholder="🔍  Search clients…" value={search} onChange={e=>setSearch(e.target.value)}
               style={{...iBase,flex:1,minWidth:160,padding:"9px 13px"}}/>
-            <div className="fzk-pills" style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+            <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
               {["all",...groups].map(g=>(
                 <button key={g} onClick={()=>setFilter(g)} style={{padding:"7px 12px",borderRadius:8,fontSize:11,fontWeight:filter===g?700:500,background:filter===g?C.redLight:C.white,border:`1.5px solid ${filter===g?C.redMid:C.gray300}`,color:filter===g?C.redDark:C.gray700}}>
                   {g==="all"?"All":g}
@@ -919,7 +909,7 @@ function App() {
                     onDrop={e=>{e.preventDefault();if(dragId!==null)updateClient(dragId,{group:g});setDragId(null);setDragOver(null);}}>
                     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,padding:isDrop?"8px 12px":"0",background:isDrop?C.redLight:"transparent",borderRadius:9,border:isDrop?`1.5px dashed ${C.red}`:"1.5px solid transparent",transition:"all 0.15s"}}>
                       <span style={{width:8,height:8,borderRadius:"50%",background:C.red,display:"inline-block"}}/>
-                      <span style={{fontSize:11,letterSpacing:1.5,textTransform:"uppercase",color:C.red,fontWeight:800}}>{g}</span>
+                      <span style={{fontSize:11,letterSpacing:1.5,textTransform:"uppercase",color:C.red,fontWeight:800}}>{{Onboarding:"🌱",Active:"⚡",Getting Started:"🚀","OG Client":"⭐","To Start":"📋"}}[g]||"●"} {g}</span>
                       <span style={{fontSize:11,color:C.gray500,background:C.gray100,padding:"1px 8px",borderRadius:99,fontWeight:500}}>{items.length}</span>
                       <div style={{flex:1,height:1.5,background:C.gray100}}/>
                       {isDrop&&<span style={{fontSize:11,color:C.red,fontWeight:600}}>Drop here</span>}
@@ -968,54 +958,46 @@ const TRACKER_PASSWORD = "vibing@fzkMEdia26"; // 🔒 Change this password
 function PasswordScreen({onUnlock}) {
   const [step, setStep] = useState("pw");
   const [pw, setPw] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [pwErr, setPwErr] = useState(false);
-  const [keyErr, setKeyErr] = useState(false);
+  const [ak, setAk] = useState("");
+  const [err, setErr] = useState("");
 
-  function attemptPw() {
+  function tryPw() {
     if(pw.trim() === TRACKER_PASSWORD) {
-      localStorage.setItem("fzk_auth","1");
-      if(!localStorage.getItem("fzk_anthropic_key")) setStep("key");
+      if(!localStorage.getItem("fzk_anthropic_key")) { setStep("key"); setErr(""); }
       else onUnlock();
     } else {
-      setPwErr(true);
-      setTimeout(()=>setPwErr(false),1500);
+      setErr("Wrong password — try again");
+      setTimeout(()=>setErr(""),1800);
       setPw("");
     }
   }
-
   function saveKey() {
-    const k = apiKey.trim();
-    if(k.startsWith("sk-ant-")) {
-      localStorage.setItem("fzk_anthropic_key", k);
-      onUnlock();
-    } else {
-      setKeyErr(true);
-      setTimeout(()=>setKeyErr(false),2000);
-    }
+    const k = ak.trim();
+    if(k.startsWith("sk-ant-")) { localStorage.setItem("fzk_anthropic_key",k); onUnlock(); }
+    else { setErr("Must start with sk-ant-"); setTimeout(()=>setErr(""),2000); }
   }
 
-  const boxStyle = {background:C.white,borderRadius:20,padding:"36px 32px",width:"100%",maxWidth:380,textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.25)"};
+  const wrap = {minHeight:"100vh",background:C.red,display:"flex",alignItems:"center",justifyContent:"center",padding:16};
+  const box = {background:C.white,borderRadius:24,padding:"40px 32px",width:"100%",maxWidth:380,textAlign:"center",boxShadow:"0 24px 64px rgba(0,0,0,0.28)"};
 
   if(step==="key") return (
-    <div style={{minHeight:"100vh",background:C.red,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-      <div style={boxStyle}>
-        <div style={{fontSize:28,fontWeight:900,color:C.red,letterSpacing:-1,marginBottom:4}}>FZK Media</div>
-        <div style={{fontSize:13,color:C.gray500,marginBottom:6}}>AI Setup — one time only</div>
-        <div style={{fontSize:12,color:C.gray500,background:C.gray50,padding:"10px 14px",borderRadius:10,textAlign:"left",marginBottom:20,lineHeight:1.6}}>
-          Enter your Anthropic API key to power AI Chat.<br/>
-          Stored only on <strong>this device</strong> — never in the code.<br/>
-          Get it at: <strong>console.anthropic.com</strong>
+    <div style={wrap}>
+      <div style={box}>
+        <div style={{fontSize:13,background:C.red,color:C.white,borderRadius:99,padding:"4px 14px",display:"inline-block",fontWeight:700,marginBottom:16}}>One-time setup</div>
+        <div style={{fontSize:26,fontWeight:900,color:C.red,marginBottom:4}}>FZK Media</div>
+        <div style={{fontSize:13,color:C.gray500,marginBottom:20}}>AI Chat needs your Anthropic key</div>
+        <div style={{fontSize:12,color:C.gray700,background:C.gray50,padding:"12px 14px",borderRadius:12,textAlign:"left",marginBottom:20,lineHeight:1.7}}>
+          This is stored <strong>only on this device</strong> — never in code or GitHub.<br/>
+          Get yours at: <span style={{color:C.red,fontWeight:600}}>console.anthropic.com</span>
         </div>
-        <input value={apiKey} onChange={e=>setApiKey(e.target.value)}
-          onKeyDown={e=>e.key==="Enter"&&saveKey()}
-          placeholder="sk-ant-api03-..."
-          style={{...iBase,width:"100%",padding:"11px 14px",fontSize:13,border:`2px solid ${keyErr?C.red:C.gray300}`,marginBottom:8}}/>
-        {keyErr&&<div style={{fontSize:12,color:C.red,marginBottom:8,fontWeight:600}}>Must start with sk-ant-</div>}
-        <button onClick={saveKey} style={{width:"100%",padding:"12px",background:C.red,border:"none",borderRadius:10,color:C.white,fontSize:14,fontWeight:800,marginBottom:10,boxShadow:`0 4px 16px ${C.red}44`}}>
-          Save & Open Tracker
+        <input value={ak} onChange={e=>setAk(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveKey()}
+          placeholder="sk-ant-api03-..." autoFocus
+          style={{...iBase,width:"100%",padding:"11px 14px",fontSize:13,border:`2px solid ${err?C.red:C.gray300}`,marginBottom:8,textAlign:"left"}}/>
+        {err&&<div style={{fontSize:12,color:C.red,marginBottom:8,fontWeight:600}}>{err}</div>}
+        <button onClick={saveKey} style={{width:"100%",padding:"13px",background:C.red,border:"none",borderRadius:12,color:C.white,fontSize:14,fontWeight:800,marginBottom:10,boxShadow:`0 4px 20px ${C.red}55`}}>
+          Save Key & Open Tracker →
         </button>
-        <button onClick={onUnlock} style={{width:"100%",padding:"10px",background:"none",border:`1.5px solid ${C.gray300}`,borderRadius:10,color:C.gray500,fontSize:12}}>
+        <button onClick={onUnlock} style={{width:"100%",padding:"10px",background:"none",border:`1.5px solid ${C.gray300}`,borderRadius:10,color:C.gray500,fontSize:12,fontWeight:500}}>
           Skip — use without AI
         </button>
       </div>
@@ -1023,38 +1005,34 @@ function PasswordScreen({onUnlock}) {
   );
 
   return (
-    <div style={{minHeight:"100vh",background:C.red,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-      <div style={boxStyle}>
-        <div style={{fontSize:28,fontWeight:900,color:C.red,letterSpacing:-1,marginBottom:4}}>FZK Media</div>
-        <div style={{fontSize:13,color:C.gray500,marginBottom:28}}>Cycle Tracker · Team Access</div>
-        <input type="password" value={pw} onChange={e=>setPw(e.target.value)}
-          onKeyDown={e=>e.key==="Enter"&&attemptPw()}
-          placeholder="Team password"
-          style={{...iBase,width:"100%",padding:"12px 16px",fontSize:15,textAlign:"center",border:`2px solid ${pwErr?C.red:C.gray300}`,marginBottom:12}}
-          autoFocus/>
-        {pwErr&&<div style={{fontSize:12,color:C.red,marginBottom:8,fontWeight:600}}>Wrong password. Try again.</div>}
-        <button onClick={attemptPw} style={{width:"100%",padding:"12px",background:C.red,border:"none",borderRadius:10,color:C.white,fontSize:15,fontWeight:800,boxShadow:`0 4px 16px ${C.red}44`}}>
-          Access Tracker
+    <div style={wrap}>
+      <div style={box}>
+        <div style={{fontSize:36,fontWeight:900,color:C.red,letterSpacing:-2,marginBottom:2}}>FZK</div>
+        <div style={{fontSize:18,fontWeight:700,color:C.gray700,marginBottom:24}}>Media · Cycle Tracker</div>
+        <input type="password" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&tryPw()}
+          placeholder="Team password" autoFocus
+          style={{...iBase,width:"100%",padding:"13px 16px",fontSize:15,textAlign:"center",border:`2px solid ${err?C.red:C.gray300}`,marginBottom:10,letterSpacing:2}}/>
+        {err&&<div style={{fontSize:12,color:C.red,marginBottom:10,fontWeight:600}}>{err}</div>}
+        <button onClick={tryPw} style={{width:"100%",padding:"13px",background:C.red,border:"none",borderRadius:12,color:C.white,fontSize:15,fontWeight:800,boxShadow:`0 4px 20px ${C.red}55`,marginBottom:16}}>
+          Enter Tracker →
         </button>
-        <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginTop:14}}>FZK Media · Internal Tool</div>
+        <div style={{fontSize:11,color:C.gray300}}>FZK Media · Internal Tool · v4</div>
       </div>
     </div>
   );
 }
 
-const AUTH_VERSION = "v3"; // bump this to force re-auth on all devices
+const AUTH_VER = "fzk_v4"; // bump this string to force re-login on all devices
 
 function Root() {
-  const savedVersion = localStorage.getItem("fzk_auth_version");
-  const isAuthed = !!localStorage.getItem("fzk_auth") && savedVersion === AUTH_VERSION;
-  const [authed, setAuthed] = useState(isAuthed);
-
-  function handleUnlock() {
-    localStorage.setItem("fzk_auth_version", AUTH_VERSION);
+  const ok = localStorage.getItem("fzk_auth")==="1" && localStorage.getItem("fzk_auth_ver")===AUTH_VER;
+  const [authed, setAuthed] = useState(ok);
+  function unlock(){
+    localStorage.setItem("fzk_auth","1");
+    localStorage.setItem("fzk_auth_ver", AUTH_VER);
     setAuthed(true);
   }
-
-  if(!authed) return <PasswordScreen onUnlock={handleUnlock}/>;
+  if(!authed) return <PasswordScreen onUnlock={unlock}/>;
   return <App/>;
 }
 
